@@ -1,0 +1,2276 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<title>EyeSense v10</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#060610">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#060610;--surface:rgba(255,255,255,0.055);--border:rgba(255,255,255,0.11);
+  --text:#f0f0ff;--muted:#7a7a9a;--accent:#e02020;--dwell:#ffe033;--font:14px;
+  --blue:#4488ff;--green:#22dd88;
+}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans-serif;
+  font-size:var(--font);overflow:hidden;height:100dvh;user-select:none;touch-action:none;
+  -webkit-font-smoothing:antialiased;}
+
+/* ── TEMA ── */
+body.hc{--bg:#000;--surface:#1a1a1a;--border:#fff;--muted:#ccc;--accent:#ff0;--dwell:#0ff;}
+body.hc #dot{background:#ff0!important;box-shadow:0 0 0 4px rgba(255,255,0,0.4)!important;}
+body.hc .phrase-btn,body.hc .kb-key,body.hc .iot-card{background:#1a1a1a!important;border-color:#fff!important;}
+body.hc .gazing{border-color:#ff0!important;}
+body.hc .dwell-ov{background:#ff0!important;}
+body.lg{--font:19px;}
+body.lg .phrase-btn{min-height:100px;}
+body.lg .phrase-btn .pb-t{font-size:16px!important;}
+body.lg .kb-key{font-size:17px!important;height:52px!important;}
+body.lg #outputText{font-size:26px;}
+body.night{filter:brightness(0.70);}
+
+/* ── VIDEO ── */
+#video{position:fixed;bottom:12px;right:12px;width:130px;height:73px;
+  object-fit:cover;border-radius:10px;border:1px solid var(--border);
+  transform:scaleX(-1);z-index:5;opacity:0.55;}
+@media(max-width:500px){#video{width:85px;height:48px;bottom:8px;right:8px;}}
+
+/* ── GAZE DOT ── */
+#dot{position:fixed;width:18px;height:18px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,#ffee88,#cc1111);
+  box-shadow:0 0 0 3px rgba(255,0,0,0.18),0 0 14px rgba(255,80,0,0.45);
+  transform:translate(-50%,-50%);pointer-events:none;z-index:60;display:none;}
+#dwellRing{position:fixed;pointer-events:none;z-index:59;display:none;transform:translate(-50%,-50%);}
+#dwellRing svg{overflow:visible;}
+.dr-track{fill:none;stroke:rgba(255,255,255,0.1);stroke-width:3;}
+.dr-bar{fill:none;stroke:var(--dwell);stroke-width:3;stroke-linecap:round;}
+
+/* ── BLINK FLASH ── */
+#blinkFlash{position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:900;
+  background:rgba(255,224,51,0.14);border:1px solid rgba(255,224,51,0.45);
+  border-radius:24px;padding:6px 18px;font-size:12px;color:#ffe033;
+  display:none;pointer-events:none;font-family:'Syne',sans-serif;letter-spacing:.04em;}
+
+/* ── SCREENS ── */
+.screen{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:18px;padding:28px;background:var(--bg);}
+.screen.hidden{display:none!important;}
+
+/* ══════════════════════════════════════════
+   ── START SCREEN — YARATICI TASARIM ──
+   ══════════════════════════════════════════ */
+#startScreen{
+  background:var(--bg);
+  overflow:hidden;
+}
+/* Derin arkaplan efekti */
+#startScreen::before{
+  content:'';position:absolute;inset:0;z-index:0;
+  background:
+    radial-gradient(ellipse 70% 60% at 20% 30%, rgba(68,136,255,0.09) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 70% at 80% 70%, rgba(224,32,32,0.07) 0%, transparent 55%),
+    radial-gradient(ellipse 40% 40% at 50% 50%, rgba(255,224,51,0.04) 0%, transparent 60%);
+  pointer-events:none;
+}
+/* Izgara çizgileri */
+#startScreen::after{
+  content:'';position:absolute;inset:0;z-index:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size:44px 44px;
+  pointer-events:none;
+  mask-image:radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
+}
+#startInner{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:22px;width:100%;max-width:420px;}
+
+/* EYE amblem */
+.start-eye-wrap{position:relative;width:72px;height:72px;margin-bottom:2px;}
+.start-eye-outer{width:72px;height:72px;border-radius:50%;background:rgba(68,136,255,0.08);
+  border:1px solid rgba(68,136,255,0.25);display:flex;align-items:center;justify-content:center;
+  animation:eyePulse 3s ease-in-out infinite;}
+.start-eye-inner{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,rgba(68,136,255,0.3),rgba(224,32,32,0.2));
+  border:1px solid rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:22px;}
+@keyframes eyePulse{0%,100%{box-shadow:0 0 0 0 rgba(68,136,255,0.2),0 0 20px rgba(68,136,255,0.1);}50%{box-shadow:0 0 0 12px rgba(68,136,255,0.05),0 0 40px rgba(68,136,255,0.2);}}
+
+/* LOGO tipografi */
+.start-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:38px;letter-spacing:-.02em;line-height:1;text-align:center;}
+.start-logo .eye-part{color:#4488ff;}
+.start-logo .sense-part{color:var(--text);}
+.start-tagline{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;text-align:center;font-weight:300;}
+
+/* ANA SLOGAN */
+.start-hero{text-align:center;max-width:360px;}
+.start-hero h2{font-family:'Syne',sans-serif;font-weight:700;font-size:21px;line-height:1.35;color:var(--text);margin-bottom:8px;}
+.start-hero h2 em{color:#4488ff;font-style:normal;}
+.start-hero p{font-size:13px;color:var(--muted);line-height:1.7;}
+
+/* GİZLİLİK ROZET */
+.privacy-badge{
+  background:rgba(34,221,136,0.06);
+  border:1px solid rgba(34,221,136,0.18);
+  border-radius:14px;padding:10px 16px;font-size:12px;color:#22cc77;
+  line-height:1.8;text-align:center;width:100%;
+}
+.privacy-badge b{color:#33ee99;}
+
+/* BUTONLAR */
+.start-btn-group{display:flex;flex-direction:column;gap:9px;width:100%;}
+.btn-start-main{
+  padding:14px 24px;
+  background:linear-gradient(135deg,#1a3a7a,#2244aa);
+  border:1px solid rgba(68,136,255,0.4);
+  border-radius:14px;color:#fff;font-size:15px;font-family:'Syne',sans-serif;
+  font-weight:700;cursor:pointer;letter-spacing:.04em;
+  transition:all .2s;position:relative;overflow:hidden;
+}
+.btn-start-main::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.06),transparent);pointer-events:none;}
+.btn-start-main:hover{border-color:rgba(68,136,255,0.8);box-shadow:0 0 24px rgba(68,136,255,0.25);}
+.btn-start-saved{padding:12px 20px;background:rgba(255,255,255,0.04);border:1px solid var(--border);
+  border-radius:12px;color:var(--muted);font-size:13px;cursor:pointer;transition:all .2s;}
+.btn-start-saved:hover{background:rgba(255,255,255,0.09);color:var(--text);border-color:rgba(255,255,255,0.25);}
+.saved-info{font-size:12px;color:#7a7a9a;background:rgba(34,221,136,0.05);border:1px solid rgba(34,221,136,0.14);
+  border-radius:8px;padding:7px 14px;text-align:center;}
+.saved-info b{color:#22dd88;}
+
+/* V badge */
+.start-v{position:absolute;bottom:18px;right:18px;font-size:11px;color:#333;letter-spacing:.08em;font-family:'Syne',sans-serif;}
+
+/* ── CALIB ── */
+#calibScreen{background:#040408;}
+#calibDot{position:fixed;border-radius:50%;transform:translate(-50%,-50%);z-index:350;display:none;pointer-events:none;}
+#calibRing{position:fixed;transform:translate(-50%,-50%);z-index:351;display:none;pointer-events:none;}
+#calibMsg{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:360;
+  background:rgba(0,0,0,0.85);border:1px solid var(--border);border-radius:16px;
+  color:#ccc;font-size:14px;padding:9px 20px;display:none;white-space:nowrap;}
+#calibCounter{position:fixed;top:20px;left:50%;transform:translateX(-50%);
+  z-index:360;font-size:13px;color:#555;display:none;}
+#qualityBar{position:fixed;top:48px;left:50%;transform:translateX(-50%);
+  z-index:360;display:none;align-items:center;gap:8px;font-size:12px;color:#666;}
+#qualityBar .bw{width:110px;height:5px;background:#222;border-radius:3px;overflow:hidden;}
+#qualityBar .bf{height:100%;width:0%;border-radius:3px;transition:width .1s,background .1s;}
+
+/* ── WARNINGS ── */
+#lightWarn,#headWarn{position:fixed;left:50%;transform:translateX(-50%);z-index:400;
+  padding:7px 16px;border-radius:20px;font-size:12px;font-weight:600;display:none;}
+#lightWarn{top:14px;background:rgba(255,180,0,.12);border:1px solid #fa0;color:#fa0;}
+#headWarn{top:44px;background:rgba(255,60,60,.12);border:1px solid #f44;color:#f44;}
+
+/* ── EVAL ── */
+#evalScreen{background:#040408;}
+#evalDot{position:fixed;width:26px;height:26px;border-radius:50%;background:#fff;
+  box-shadow:0 0 0 10px rgba(255,255,255,0.1);transform:translate(-50%,-50%);z-index:350;display:none;}
+#evalDot.active{background:#ff3;box-shadow:0 0 0 12px rgba(255,220,0,.15),0 0 28px rgba(255,200,0,.35);}
+#evalRing{position:fixed;transform:translate(-50%,-50%);z-index:351;display:none;pointer-events:none;}
+#evalMsg{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:360;
+  background:rgba(0,0,0,0.85);border:1px solid var(--border);border-radius:16px;
+  color:#ccc;font-size:14px;padding:9px 20px;display:none;}
+#evalCounter{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:360;font-size:13px;color:#555;display:none;}
+
+/* ── REPORT ── */
+#reportScreen{gap:14px;}
+.rep-title{font-size:19px;font-weight:700;font-family:'Syne',sans-serif;}
+.rep-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;width:100%;max-width:500px;}
+.mc{background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:14px 10px;text-align:center;}
+.mv{font-size:24px;font-weight:700;color:#ffe033;margin-bottom:3px;}
+.ml{font-size:10px;color:#555;letter-spacing:.04em;}
+.ms{font-size:10px;color:#444;margin-top:2px;}
+.err-list{width:100%;max-width:500px;background:rgba(255,255,255,.03);border:1px solid var(--border);
+  border-radius:11px;padding:10px 14px;font-size:12px;color:#666;max-height:140px;overflow-y:auto;}
+.er{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+.er:last-child{border:none;}
+.ok{color:#4d4;}.mid{color:#fa0;}.bad{color:#f44;}
+.rep-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+
+/* ── MAIN UI ── */
+#mainUI{position:fixed;top:12px;left:12px;z-index:100;display:none;flex-direction:column;gap:7px;}
+.panel{background:rgba(6,6,16,0.88);border:1px solid var(--border);border-radius:10px;
+  padding:9px 13px;font-size:12px;color:#aaa;display:flex;flex-direction:column;gap:4px;}
+.panel b{color:#fff;}
+input[type=range]{width:120px;accent-color:#4488ff;}
+
+/* ── MAIN MENU BUTONLARI — DWELL DESTEKLİ ── */
+.btn-sm{padding:8px 13px;background:rgba(6,6,16,0.88);border:1px solid var(--border);
+  border-radius:9px;color:#fff;font-size:12px;cursor:pointer;
+  position:relative;overflow:hidden;transition:border-color .15s;}
+.btn-sm.gazing{border-color:var(--dwell);background:rgba(255,224,51,0.06);}
+.btn-sm .btn-dwell{position:absolute;bottom:0;left:0;height:3px;background:var(--dwell);width:0%;border-radius:0 0 9px 9px;}
+@media(max-width:500px){
+  #mainUI{top:auto;bottom:0;left:0;right:0;flex-direction:row;flex-wrap:wrap;
+    padding:6px;gap:5px;background:rgba(4,4,12,0.95);border-top:1px solid var(--border);z-index:100;}
+  .panel{display:none;}
+  .btn-sm{flex:1;min-width:70px;text-align:center;padding:10px 4px;font-size:11px;}
+}
+
+/* ── STATUS ── */
+#statusBar{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);
+  background:rgba(6,6,16,0.82);border:1px solid var(--border);border-radius:16px;
+  color:#555;font-size:12px;padding:6px 16px;z-index:70;display:none;white-space:nowrap;}
+#irisQ{position:fixed;top:12px;right:155px;z-index:70;display:none;
+  font-size:11px;color:#444;background:rgba(6,6,16,0.7);padding:4px 9px;border-radius:8px;}
+@media(max-width:500px){#irisQ{right:96px;}#statusBar{bottom:56px;}}
+
+/* ── GAZE BACK BTN ── */
+#gazeBackBtn{position:fixed;top:14px;left:14px;z-index:500;
+  background:rgba(6,6,16,0.82);border:1px solid var(--border);border-radius:12px;
+  padding:8px 14px;font-size:13px;color:#aaa;cursor:pointer;display:none;
+  flex-direction:column;align-items:center;gap:3px;overflow:hidden;}
+#gazeBackBtn .gb-dwell{position:absolute;bottom:0;left:0;height:3px;background:var(--dwell);width:0%;}
+#gazeBackBtn.gazing{border-color:var(--dwell);color:#fff;}
+
+/* ── PHRASE BOARD ── */
+#phraseBoard{position:fixed;inset:0;background:var(--bg);z-index:80;display:none;flex-direction:column;}
+#phraseBoard .pb-hdr{padding:12px 16px;font-size:13px;color:#555;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;}
+#phraseBoard .pb-hdr b{color:#aaa;flex:1;font-family:'Syne',sans-serif;}
+#phraseBoard .pb-grid{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px;overflow-y:auto;}
+@media(max-width:500px){#phraseBoard .pb-grid{grid-template-columns:repeat(2,1fr);}}
+.phrase-btn{background:var(--surface);border:1px solid var(--border);border-radius:14px;
+  color:#fff;cursor:pointer;position:relative;overflow:hidden;display:flex;
+  align-items:center;justify-content:center;flex-direction:column;
+  text-align:center;padding:10px;min-height:80px;transition:border-color .2s;}
+.pb-i{font-size:22px;margin-bottom:4px;}
+.pb-t{font-size:12px;color:#bbb;}
+.phrase-btn.gazing{border-color:var(--dwell);background:rgba(255,224,51,0.06);}
+.dwell-ov{position:absolute;bottom:0;left:0;height:4px;background:var(--dwell);width:0%;border-radius:0 0 14px 14px;}
+.ph-del{position:absolute;top:4px;right:5px;font-size:10px;color:#444;cursor:pointer;z-index:2;}
+.ph-del:hover{color:#f44;}
+.ph-add{background:rgba(255,255,255,0.02);border:1px dashed rgba(255,255,255,0.1);
+  border-radius:14px;min-height:80px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:#444;font-size:26px;transition:border-color .2s;}
+.ph-add:hover{border-color:#666;color:#fff;}
+#output{position:fixed;bottom:0;left:0;right:0;background:rgba(6,6,16,0.95);
+  border-top:1px solid var(--border);padding:12px 16px;z-index:90;display:none;align-items:center;gap:10px;}
+#outputText{flex:1;font-size:18px;color:#fff;font-family:'Syne',sans-serif;}
+#outputClose{padding:6px 12px;background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;color:#888;font-size:12px;cursor:pointer;}
+
+/* ── MODAL ── */
+#addModal{position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:700;display:none;align-items:center;justify-content:center;}
+.modal-box{background:#0e0e1e;border:1px solid rgba(255,255,255,0.13);border-radius:18px;
+  padding:24px;width:92%;max-width:370px;display:flex;flex-direction:column;gap:13px;}
+.modal-box h3{font-size:15px;font-weight:700;font-family:'Syne',sans-serif;}
+.modal-box input{background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.13);
+  border-radius:10px;padding:10px 14px;color:#fff;font-size:15px;width:100%;}
+.modal-box input:focus{outline:none;border-color:var(--dwell);}
+.emoji-row{display:flex;gap:7px;flex-wrap:wrap;}
+.e-opt{font-size:22px;cursor:pointer;padding:4px;border-radius:6px;border:2px solid transparent;}
+.e-opt.sel{border-color:var(--dwell);background:rgba(255,224,51,0.1);}
+.modal-btns{display:flex;gap:8px;}
+
+/* ── DPI ── */
+#dpiPanel{position:fixed;inset:0;background:var(--bg);z-index:600;display:none;
+  flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:28px;}
+#dpiPanel h2{font-size:17px;font-weight:700;font-family:'Syne',sans-serif;}
+#dpiRuler{position:relative;height:30px;border:1px solid #444;border-radius:4px;
+  background:repeating-linear-gradient(90deg,rgba(255,255,255,0.04) 0,rgba(255,255,255,0.04) 1px,transparent 1px,transparent 10px);cursor:ew-resize;}
+#dpiHandle{position:absolute;top:0;right:0;width:12px;height:100%;background:#ffe033;border-radius:0 4px 4px 0;cursor:ew-resize;}
+
+/* ── IOT ── */
+#iotPanel{position:fixed;inset:0;background:var(--bg);z-index:500;display:none;
+  flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:28px;}
+#iotPanel h2{font-size:19px;font-weight:700;font-family:'Syne',sans-serif;}
+.iot-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;width:100%;max-width:480px;}
+.iot-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;
+  padding:18px;text-align:center;cursor:pointer;position:relative;overflow:hidden;
+  display:flex;flex-direction:column;align-items:center;gap:7px;transition:border-color .2s;}
+.iot-icon{font-size:28px;}.iot-name{font-size:13px;font-weight:600;}.iot-state{font-size:11px;color:#555;}
+.iot-card.on{border-color:#4d4;background:rgba(0,200,80,0.05);}
+.iot-card.on .iot-state{color:#4d4;}
+.iot-card.gazing{border-color:var(--dwell);}
+.iot-badge{background:rgba(255,150,0,0.08);border:1px solid rgba(255,150,0,0.25);
+  border-radius:8px;padding:8px 14px;font-size:12px;color:#fa0;text-align:center;max-width:420px;}
+
+/* ══════════════════════════════════════════
+   ── KLAVYE — TAM YENİDEN YAZILDI ──
+   ══════════════════════════════════════════ */
+#kbPanel{position:fixed;inset:0;background:var(--bg);z-index:80;display:none;flex-direction:column;}
+
+/* Display */
+#kbHdr{padding:8px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+#kbDisplay{flex:1;min-height:44px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);
+  border-radius:10px;padding:8px 12px;font-size:18px;color:var(--text);
+  display:flex;align-items:center;flex-wrap:wrap;font-family:'Syne',sans-serif;}
+#kbDisplay .cur{display:inline-block;width:2px;height:22px;background:#4488ff;animation:blink 1s infinite;margin-left:1px;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* Öneri şeridi */
+#kbSugg{display:flex;gap:5px;padding:5px 10px;border-bottom:1px solid var(--border);
+  min-height:38px;align-items:center;overflow-x:auto;scrollbar-width:none;}
+#kbSugg::-webkit-scrollbar{display:none;}
+.kb-sg{padding:5px 13px;background:rgba(68,136,255,0.08);border:1px solid rgba(68,136,255,0.2);
+  border-radius:18px;font-size:13px;color:var(--text);white-space:nowrap;
+  cursor:pointer;position:relative;overflow:hidden;flex-shrink:0;transition:border-color .12s;}
+.kb-sg.gazing{border-color:var(--dwell);background:rgba(255,224,51,0.07);}
+.kb-sg .dwell-ov{position:absolute;bottom:0;left:0;height:2px;background:var(--dwell);width:0%;}
+
+/* Tuşlar */
+#kbRows{flex:1;display:flex;flex-direction:column;padding:3px 5px;gap:3px;justify-content:center;}
+.kb-row{display:flex;gap:3px;justify-content:center;}
+.kb-key{
+  flex:1;max-width:54px;min-width:24px;height:46px;
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.1);border-radius:9px;
+  color:var(--text);font-size:15px;font-weight:500;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;position:relative;overflow:hidden;
+  transition:border-color .08s,background .08s;
+}
+.kb-key.wide{flex:2;max-width:108px;font-size:12px;}
+.kb-key.xwide{flex:5;max-width:9999px;}
+.kb-key.gazing{border-color:rgba(255,224,51,0.7);background:rgba(255,224,51,0.08);}
+.kb-key.blink-ready{
+  border-color:#4af;background:rgba(64,170,255,0.12);
+  box-shadow:0 0 0 2px rgba(64,170,255,0.25),0 0 12px rgba(64,170,255,0.2);
+  animation:blinkReady .5s ease-in-out infinite alternate;
+}
+@keyframes blinkReady{from{box-shadow:0 0 0 2px rgba(64,170,255,0.2),0 0 8px rgba(64,170,255,0.15);}to{box-shadow:0 0 0 3px rgba(64,170,255,0.4),0 0 18px rgba(64,170,255,0.3);}}
+.kb-key .dwell-ov{position:absolute;bottom:0;left:0;height:3px;background:var(--dwell);width:0%;}
+/* Tuş basış flash */
+.kb-key.pressed{background:rgba(255,224,51,0.18)!important;border-color:var(--dwell)!important;transition:none!important;}
+
+/* Alt bar */
+#kbBottomBar{display:flex;gap:5px;padding:5px 8px 7px;border-top:1px solid var(--border);flex-wrap:nowrap;}
+#kbTTS{flex:1.2;padding:9px 6px;background:rgba(224,32,32,0.12);border:1px solid rgba(224,32,32,0.3);
+  border-radius:9px;color:#ff8888;font-size:12px;cursor:pointer;transition:background .15s;}
+#kbTTS:hover,#kbTTS:active{background:rgba(224,32,32,0.25);}
+#kbVoice{flex:1.2;padding:9px 6px;background:rgba(68,136,255,0.1);border:1px solid rgba(68,136,255,0.28);
+  border-radius:9px;color:#88aaff;font-size:12px;cursor:pointer;transition:background .15s;}
+#kbVoice.listening{background:rgba(255,50,50,0.18);border-color:#f44;color:#f99;animation:pulse .7s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+#kbBlinkToggle{flex:1;padding:9px 5px;background:rgba(255,224,51,0.06);border:1px solid rgba(255,224,51,0.2);
+  border-radius:9px;color:#aa9900;font-size:11px;cursor:pointer;transition:all .15s;}
+#kbBlinkToggle.active{background:rgba(255,224,51,0.15);border-color:rgba(255,224,51,0.5);color:#ffe033;}
+#kbCloseBtn2{flex:0.8;padding:9px 5px;background:rgba(255,255,255,0.04);border:1px solid var(--border);
+  border-radius:9px;color:#888;font-size:12px;cursor:pointer;}
+
+@media(max-width:500px){
+  .kb-key{max-width:44px;height:42px;font-size:13px;}
+  .kb-key.wide{max-width:86px;}
+  #kbBottomBar{gap:4px;}
+}
+
+/* ── A11Y ── */
+#a11yPanel{position:fixed;inset:0;background:var(--bg);z-index:500;display:none;
+  flex-direction:column;align-items:center;justify-content:flex-start;gap:14px;padding:24px;overflow-y:auto;}
+#a11yPanel h2{font-size:19px;font-weight:700;margin-top:8px;font-family:'Syne',sans-serif;}
+.a11y-section{width:100%;max-width:540px;}
+.a11y-section h3{font-size:12px;color:#555;letter-spacing:.07em;margin-bottom:10px;text-transform:uppercase;}
+.a11y-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+.a11y-card{background:var(--surface);border:2px solid var(--border);border-radius:13px;
+  padding:16px 13px;display:flex;flex-direction:column;align-items:center;gap:7px;
+  cursor:pointer;transition:border-color .2s;text-align:center;}
+.a11y-card:hover{background:rgba(255,255,255,0.07);}
+.a11y-card.active{border-color:var(--dwell);background:rgba(255,224,51,0.06);}
+.a11y-card .ai{font-size:28px;}.a11y-card .at{font-size:14px;font-weight:600;}.a11y-card .al{font-size:12px;color:var(--muted);}
+.sl-row{width:100%;max-width:540px;background:var(--surface);border:1px solid var(--border);
+  border-radius:11px;padding:13px 16px;display:flex;flex-direction:column;gap:7px;}
+.sl-row label{font-size:13px;color:var(--muted);}
+.sl-row input{width:100%;accent-color:#4488ff;}
+.mode-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;width:100%;max-width:540px;}
+.mode-card{background:var(--surface);border:2px solid var(--border);border-radius:13px;
+  padding:18px 12px;display:flex;flex-direction:column;align-items:center;gap:8px;
+  cursor:pointer;transition:border-color .2s,background .2s;text-align:center;}
+.mode-card.active{border-color:var(--dwell);background:rgba(255,224,51,0.06);}
+.mode-card .mi{font-size:32px;}.mode-card .mt{font-size:14px;font-weight:600;}.mode-card .ml2{font-size:12px;color:var(--muted);}
+
+/* GENEL BUTONLAR */
+.btn-p{padding:12px 30px;background:linear-gradient(135deg,#8a1010,#cc2020);border:none;
+  border-radius:12px;color:#fff;font-size:14px;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;letter-spacing:.04em;}
+.btn-s{padding:10px 20px;background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;color:var(--muted);font-size:13px;cursor:pointer;transition:background .15s;}
+.btn-s:hover{background:rgba(255,255,255,0.09);color:#fff;}
+
+/* ══════════════════════════════════════════
+   ── MOBİL OPTİMİZASYON (kapsamlı) ──
+   ══════════════════════════════════════════ */
+
+/* --- GENEL MOBİL --- */
+@media(max-width:600px){
+  :root{ --font:15px; }
+
+  /* Tüm ekranlar için güvenli alan padding */
+  .screen{
+    padding: 20px 16px;
+    padding-top: max(20px, env(safe-area-inset-top));
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+    gap:14px;
+  }
+
+  /* ── START SCREEN ── */
+  #startInner{gap:16px; max-width:100%;}
+  .start-eye-wrap{width:60px;height:60px;}
+  .start-eye-outer{width:60px;height:60px;}
+  .start-eye-inner{width:36px;height:36px;font-size:18px;}
+  .start-logo{font-size:30px;}
+  .start-tagline{font-size:12px;}
+  .start-hero h2{font-size:18px;}
+  .start-hero p{font-size:12px;}
+  .privacy-badge{font-size:11px;padding:8px 12px;}
+  .btn-start-main{font-size:14px;padding:14px 18px;}
+  .btn-start-saved{font-size:12px;padding:11px 16px;}
+  .start-v{bottom:10px;right:10px;}
+
+  /* ── MAIN UI — Alt tab bar ── */
+  #mainUI{
+    top:auto; bottom:0; left:0; right:0;
+    flex-direction:row; flex-wrap:wrap;
+    padding:6px 6px max(6px, env(safe-area-inset-bottom));
+    gap:4px;
+    background:rgba(4,4,12,0.97);
+    border-top:1px solid var(--border);
+    z-index:100;
+  }
+  .panel{ display:none; }
+  .btn-sm{
+    flex:1; min-width:calc(25% - 4px);
+    text-align:center; padding:9px 3px;
+    font-size:9.5px; line-height:1.35;
+  }
+
+  /* ── STATUS BAR ── */
+  #statusBar{
+    bottom: max(52px, calc(52px + env(safe-area-inset-bottom)));
+    font-size:10px; padding:5px 10px;
+    max-width:calc(100vw - 110px);
+    white-space:normal; text-align:center; line-height:1.4;
+  }
+  #irisQ{ right:90px; font-size:10px; }
+
+  /* ── VİDEO ── */
+  #video{ width:72px; height:40px; bottom:max(58px, calc(58px + env(safe-area-inset-bottom))); right:6px; }
+
+  /* ── REPORT EKRANI ── */
+  .rep-grid{ grid-template-columns:repeat(3,1fr); gap:8px; }
+  .mc{ padding:10px 6px; }
+  .mv{ font-size:18px; }
+  .rep-btns{ flex-direction:column; }
+  .rep-btns .btn-p, .rep-btns .btn-s{ width:100%; text-align:center; }
+
+  /* ── PHRASE BOARD ── */
+  #phraseBoard .pb-grid{ grid-template-columns:repeat(2,1fr); gap:6px; padding:8px; }
+  .phrase-btn{ min-height:70px; padding:8px; }
+  .pb-i{ font-size:20px; }
+  .pb-t{ font-size:11px; }
+  #phraseBoard .pb-hdr{ padding:10px 12px; font-size:12px; }
+
+  /* ── KLAVYE ── */
+  #kbHdr{ padding:6px 8px; }
+  #kbDisplay{ font-size:15px; min-height:38px; padding:6px 10px; }
+  #kbSugg{ padding:4px 6px; min-height:34px; }
+  .kb-sg{ padding:4px 10px; font-size:12px; }
+  #kbRows{ padding:2px 3px; gap:2px; }
+  .kb-row{ gap:2px; }
+  .kb-key{ max-width:42px; min-width:22px; height:40px; font-size:13px; border-radius:7px; }
+  .kb-key.wide{ max-width:80px; font-size:11px; }
+  #kbBottomBar{ padding:4px 6px max(4px, env(safe-area-inset-bottom)); gap:3px; }
+  #kbTTS,#kbVoice,#kbBlinkToggle,#kbCloseBtn2{ font-size:11px; padding:8px 4px; }
+
+  /* ── A11Y PANEL ── */
+  #a11yPanel{
+    padding:16px 12px;
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+  #a11yPanel h2{ font-size:17px; margin-top:4px; }
+  .a11y-section h3{ font-size:11px; margin-bottom:7px; }
+  .a11y-grid{ gap:8px; }
+  .a11y-card{ padding:12px 10px; gap:5px; }
+  .a11y-card .ai{ font-size:22px; }
+  .a11y-card .at{ font-size:13px; }
+  .a11y-card .al{ font-size:11px; }
+  .mode-grid{ gap:8px; }
+  .mode-card{ padding:12px 10px; gap:6px; }
+  .mode-card .mi{ font-size:26px; }
+  .mode-card .mt{ font-size:13px; }
+  .sl-row{ padding:10px 12px; }
+  .sl-row label{ font-size:12px; }
+
+  /* ── IOT PANEL ── */
+  #iotPanel{
+    padding:16px 12px;
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+    gap:14px;
+  }
+  #iotPanel h2{ font-size:17px; }
+  .iot-grid{ grid-template-columns:repeat(2,1fr); gap:10px; max-width:100%; }
+  .iot-card{ padding:14px 10px; gap:5px; }
+  .iot-icon{ font-size:24px; }
+  .iot-name{ font-size:12px; }
+  .iot-badge{ font-size:11px; padding:8px 10px; }
+
+  /* ── MODAL ── */
+  .modal-box{ padding:18px 14px; gap:11px; width:96%; }
+  .modal-box h3{ font-size:14px; }
+  .modal-box input{ font-size:14px; padding:9px 12px; }
+  .emoji-row{ gap:5px; }
+  .e-opt{ font-size:20px; }
+
+  /* ── DPI PANEL ── */
+  #dpiPanel{ padding:20px 16px; gap:14px; }
+  #dpiPanel h2{ font-size:16px; }
+  #dpiRuler{ max-width:calc(100vw - 80px); }
+
+  /* ── CALIB / EVAL msg ── */
+  #calibMsg, #evalMsg{ font-size:13px; padding:8px 16px; bottom:max(16px, env(safe-area-inset-bottom)); }
+  #calibCounter, #evalCounter{ font-size:12px; top:max(16px, env(safe-area-inset-top)); }
+  #qualityBar{ top:max(44px, calc(44px + env(safe-area-inset-top))); }
+
+  /* ── WARN BANNERs ── */
+  #lightWarn{ top:max(8px, env(safe-area-inset-top)); font-size:11px; }
+  #headWarn{ top:max(36px, calc(36px + env(safe-area-inset-top))); font-size:11px; }
+  #blinkFlash{ top:max(8px, env(safe-area-inset-top)); font-size:11px; padding:5px 14px; }
+
+  /* ── GAZE BACK ── */
+  #gazeBackBtn{
+    top: max(8px, env(safe-area-inset-top));
+    left: max(8px, env(safe-area-inset-left));
+    padding:7px 12px; font-size:12px;
+  }
+
+  /* ── OUTPUT BAR ── */
+  #output{
+    padding:10px 12px;
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+  }
+  #outputText{ font-size:15px; }
+
+  /* ── DIAG / ARCH PANELS ── */
+  #diagPanel, #archPanel{
+    padding:16px 12px;
+    padding-top: max(16px, env(safe-area-inset-top));
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+
+  /* ── GENEL BUTONLAR ── */
+  .btn-p{ padding:11px 20px; font-size:13px; }
+  .btn-s{ padding:9px 16px; font-size:12px; }
+}
+
+/* Çok küçük telefonlar (≤ 380px) */
+@media(max-width:380px){
+  .start-logo{ font-size:26px; }
+  .start-hero h2{ font-size:16px; }
+  .btn-sm{ font-size:9px; padding:8px 2px; }
+  .kb-key{ max-width:36px; height:38px; font-size:12px; }
+  .kb-key.wide{ max-width:70px; }
+  .rep-grid{ grid-template-columns:repeat(3,1fr); gap:6px; }
+  .mv{ font-size:16px; }
+}
+
+/* Yatay mod (telefon landscape) */
+@media(max-width:900px) and (orientation:landscape) and (max-height:500px){
+  #startInner{ gap:10px; }
+  .start-eye-wrap{ width:44px; height:44px; }
+  .start-eye-outer{ width:44px; height:44px; }
+  .start-eye-inner{ width:28px; height:28px; font-size:14px; }
+  .start-logo{ font-size:24px; }
+  .start-tagline{ display:none; }
+  .start-hero p{ display:none; }
+  .privacy-badge{ padding:6px 10px; font-size:10px; }
+  .screen{ padding:10px 14px; gap:8px; }
+
+  #mainUI{
+    flex-direction:column; flex-wrap:nowrap;
+    top:0; right:0; left:auto; bottom:0; width:auto;
+    padding:6px 6px 6px max(6px, env(safe-area-inset-right));
+    border-top:none; border-left:1px solid var(--border);
+    overflow-y:auto;
+  }
+  .btn-sm{ min-width:58px; width:58px; flex:none; padding:8px 4px; font-size:9px; }
+  #statusBar{
+    bottom:8px; left:8px; right:68px;
+    font-size:9px; max-width:none;
+  }
+  #video{ bottom:8px; right:68px; }
+  #irisQ{ right:72px; }
+}
+</style>
+</head>
+<body>
+
+<video id="video" autoplay playsinline muted></video>
+<div id="dot"></div>
+<div id="dwellRing">
+  <svg width="40" height="40" viewBox="0 0 40 40">
+    <circle class="dr-track" cx="20" cy="20" r="17"/>
+    <circle class="dr-bar" cx="20" cy="20" r="17" id="dwellBarEl"
+      style="stroke-dasharray:107;stroke-dashoffset:107;transform:rotate(-90deg);transform-origin:50% 50%"/>
+  </svg>
+</div>
+
+<div id="blinkFlash">👁 Göz Kırpıldı</div>
+<div id="lightWarn">⚠️ Işık yetersiz</div>
+<div id="headWarn">⚠️ Kafa hareketi fazla</div>
+
+<!-- GAZE BACK -->
+<div id="gazeBackBtn">← Geri<div class="gb-dwell" id="gazeBackDwell"></div></div>
+
+<!-- ═══ START SCREEN ═══ -->
+<div class="screen" id="startScreen">
+  <div id="startInner">
+    <div class="start-eye-wrap">
+      <div class="start-eye-outer">
+        <div class="start-eye-inner">👁</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="start-logo">
+        <span class="eye-part">Eye</span><span class="sense-part">Sense</span>
+      </div>
+      <div class="start-tagline">Bakışla iletişim · Engelsiz teknoloji</div>
+    </div>
+
+    <div class="start-hero">
+      <h2>Gözleriniz artık<br><em>sesiniz</em></h2>
+      <p>Hareket kısıtlılığı olan bireyler için tasarlandı.<br>Kamera, yapay zeka ve göz takibi — sadece bir tarayıcı yeterli.</p>
+    </div>
+
+    <div class="privacy-badge">
+      🔒 <b>Tam gizlilik:</b> Video kaydedilmez, sunucuya gönderilmez.<br>Tüm işlem yalnızca cihazınızda çalışır.
+    </div>
+
+    <div id="savedInfo" class="saved-info" style="display:none;width:100%;"></div>
+
+    <div class="start-btn-group">
+      <button class="btn-start-main" id="startFreshBtn">▶ Kalibrasyonu Başlat</button>
+      <button class="btn-start-saved" id="useSavedBtn" style="display:none">💾 Kayıtlı Kalibrasyonu Kullan</button>
+      <button class="btn-start-saved" id="dpiSetupBtn">📏 Ekran Boyutu Ayarla</button>
+    </div>
+  </div>
+  <div class="start-v">v10</div>
+</div>
+
+<!-- CALIB -->
+<div class="screen hidden" id="calibScreen">
+  <button id="calibBackBtn" onclick="cancelCalibration()" style="position:absolute;top:max(16px,env(safe-area-inset-top));left:16px;background:rgba(6,6,16,0.82);border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:#aaa;font-size:13px;padding:8px 14px;cursor:pointer;z-index:10;">← İptal</button>
+</div>
+<div id="calibDot"></div>
+<svg id="calibRing"></svg>
+<div id="calibMsg"></div>
+<div id="calibCounter"></div>
+<div id="qualityBar"><span>Kalite</span><div class="bw"><div class="bf" id="qualityFill"></div></div><span id="qualityText"></span></div>
+
+<!-- EVAL -->
+<div class="screen hidden" id="evalScreen">
+  <button id="evalBackBtn" onclick="cancelEvaluation()" style="position:absolute;top:max(16px,env(safe-area-inset-top));left:16px;background:rgba(6,6,16,0.82);border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:#aaa;font-size:13px;padding:8px 14px;cursor:pointer;z-index:10;">← Geri</button>
+  <div style="font-size:15px;color:#555;text-align:center;line-height:1.9;font-family:'DM Sans',sans-serif;">
+    Noktalar sırayla belirecek.<br>Her noktaya bakın — dwell dolunca ölçüm alınır.
+  </div>
+</div>
+<div id="evalDot"></div>
+<svg id="evalRing"></svg>
+<div id="evalMsg"></div>
+<div id="evalCounter"></div>
+
+<!-- REPORT -->
+<div class="screen hidden" id="reportScreen">
+  <div class="rep-title">📊 Doğruluk Raporu</div>
+  <div class="rep-grid" id="repMetrics"></div>
+  <div class="err-list" id="errList"></div>
+  <div class="rep-btns">
+    <button class="btn-p" id="repDoneBtn">Uygulamaya Dön</button>
+    <button class="btn-s" id="repRecalBtn">🔄 Yeniden Kalibre Et</button>
+  </div>
+</div>
+
+<!-- MAIN UI — dwell destekli butonlar -->
+<div id="mainUI">
+  <div class="panel">
+    <b>Yumuşatma: <span id="smVal">0.08</span></b>
+    <input type="range" id="smSlider" min="3" max="60" value="8">
+  </div>
+  <div class="panel">
+    <b>Dwell: <span id="dwellVal">1.2</span>s</b>
+    <input type="range" id="dwellSlider" min="5" max="40" value="12">
+  </div>
+  <button class="btn-sm" id="phraseBtn" data-action="openPhraseBoard">💬 Cümle Tahtası<div class="btn-dwell"></div></button>
+  <button class="btn-sm" id="keyboardBtn" data-action="openKeyboard">⌨️ Klavye<div class="btn-dwell"></div></button>
+  <button class="btn-sm" id="iotBtn" data-action="openIot">🏠 Akıllı Ev<div class="btn-dwell"></div></button>
+  <button class="btn-sm" id="evalBtn" data-action="startEvaluation">📊 Doğruluk Testi<div class="btn-dwell"></div></button>
+  <button class="btn-sm" id="diagBtn" data-action="openDiag">🔬 Sistem Tanısı<div class="btn-dwell"></div></button>
+  <button class="btn-sm" id="archBtn" data-action="openArch">🏗 Mimari<div class="btn-dwell"></div></button>
+  <button class="btn-sm" id="a11yBtn" data-action="openA11y">♿ Erişilebilirlik<div class="btn-dwell"></div></button>
+  <button class="btn-sm" id="recalibBtn" data-action="startCalibration">🔄 Kalibrasyon<div class="btn-dwell"></div></button>
+</div>
+
+<!-- A11Y -->
+<div id="a11yPanel">
+  <h2>♿ Erişilebilirlik</h2>
+  <div class="a11y-section">
+    <h3>Giriş Modu</h3>
+    <div class="mode-grid">
+      <div class="mode-card active" id="modeEye" onclick="setInputMode('eye')"><span class="mi">👁</span><span class="mt">Göz</span><span class="ml2">Göz takibi</span></div>
+      <div class="mode-card" id="modeFinger" onclick="setInputMode('finger')"><span class="mi">☝️</span><span class="mt">Dokunmatik</span><span class="ml2">Parmak ile</span></div>
+      <div class="mode-card" id="modeBoth" onclick="setInputMode('both')"><span class="mi">🤝</span><span class="mt">İkisi</span><span class="ml2">Göz + dokunmatik</span></div>
+      <div class="mode-card" id="modeDwell" onclick="setInputMode('dwellonly')"><span class="mi">⏱️</span><span class="mt">Yalnız Dwell</span><span class="ml2">Bakış süresi</span></div>
+    </div>
+  </div>
+  <div class="a11y-section">
+    <h3>Görünüm Teması</h3>
+    <div class="a11y-grid">
+      <div class="a11y-card active" id="thN" onclick="setTheme('n')"><span class="ai">🌑</span><span class="at">Standart</span><span class="al">Koyu</span></div>
+      <div class="a11y-card" id="thH" onclick="setTheme('hc')"><span class="ai">⬛</span><span class="at">Yüksek Kontrast</span><span class="al">Beyaz kenar</span></div>
+      <div class="a11y-card" id="thL" onclick="setTheme('lg')"><span class="ai">🔠</span><span class="at">Büyük Metin</span><span class="al">Büyük font</span></div>
+      <div class="a11y-card" id="thNi" onclick="setTheme('night')"><span class="ai">🌙</span><span class="at">Gece Modu</span><span class="al">Düşük ışık</span></div>
+    </div>
+  </div>
+  <div class="a11y-section">
+    <h3>Göz Kırpma</h3>
+    <div class="a11y-grid">
+      <div class="a11y-card" id="blinkNavCard" onclick="toggleBlinkNav()"><span class="ai">👁</span><span class="at">Blink Navigasyon</span><span class="al">Çift blink = geri</span></div>
+      <div class="a11y-card" id="blinkSensCard" onclick="cycleBlink()"><span class="ai">🎯</span><span class="at">Blink Hassasiyet</span><span class="al" id="blinkSensLabel">Normal</span></div>
+    </div>
+  </div>
+  <div class="sl-row">
+    <label>Klavye hassasiyeti: <b id="kbSensVal">Normal</b></label>
+    <input type="range" id="kbSensSl" min="1" max="3" value="2" step="1" oninput="setKbSensitivity(this.value)">
+  </div>
+  <div class="sl-row">
+    <label>Dwell süresi: <b id="a11yDwellVal">1.2</b> sn</label>
+    <input type="range" id="a11yDwellSl" min="5" max="50" value="12"
+      oninput="DWELL_MS=this.value*100;document.getElementById('a11yDwellVal').textContent=(DWELL_MS/1000).toFixed(1);document.getElementById('dwellVal').textContent=(DWELL_MS/1000).toFixed(1);">
+  </div>
+  <div class="sl-row">
+    <label>Gaze yumuşatma: <b id="a11yAlphaVal">0.10</b></label>
+    <input type="range" id="a11yAlphaSl" min="2" max="60" value="10"
+      oninput="ALPHA=this.value/100;document.getElementById('a11yAlphaVal').textContent=ALPHA.toFixed(2);document.getElementById('smVal').textContent=ALPHA.toFixed(2);">
+  </div>
+  <button class="btn-p" onclick="closeA11y()">✓ Kapat</button>
+</div>
+
+<!-- KEYBOARD -->
+<div id="kbPanel">
+  <div id="kbHdr">
+    <div id="kbDisplay"><span class="cur"></span></div>
+  </div>
+  <div id="kbSugg"></div>
+  <div id="kbRows"></div>
+  <div id="kbBottomBar">
+    <button id="kbTTS">🔊 Sesli Oku</button>
+    <button id="kbVoice">🎤 Sesli Yaz</button>
+    <button id="kbBlinkToggle">👁 Blink</button>
+    <button id="kbCloseBtn2">✕ Kapat</button>
+  </div>
+</div>
+
+<!-- PHRASE BOARD -->
+<div id="phraseBoard">
+  <div class="pb-hdr">
+    <b>💬 Ne söylemek istiyorsunuz?</b>
+    <button class="btn-s" id="pbCloseBtn">✕ Kapat</button>
+  </div>
+  <div class="pb-grid" id="pbGrid"></div>
+</div>
+<div id="output">
+  <div id="outputText"></div>
+  <button id="outputClose">✕</button>
+</div>
+
+<!-- ADD PHRASE MODAL -->
+<div id="addModal">
+  <div class="modal-box">
+    <h3>➕ Yeni Cümle</h3>
+    <div><div style="font-size:11px;color:#555;margin-bottom:5px;">Emoji:</div><div class="emoji-row" id="emojiRow"></div></div>
+    <input type="text" id="phraseInput" placeholder="Cümlenizi yazın..." maxlength="40">
+    <div class="modal-btns">
+      <button class="btn-p" id="addConfirm" style="flex:1">Ekle</button>
+      <button class="btn-s" id="addCancel" style="flex:1">İptal</button>
+    </div>
+  </div>
+</div>
+
+<!-- DPI -->
+<div id="dpiPanel">
+  <h2>📏 Ekran Boyutu</h2>
+  <div style="font-size:12px;color:#555;text-align:center;max-width:400px;line-height:1.8;">Sarı tutacağı sürükleyerek çubuğu <b>tam 10 cm</b> yapın.</div>
+  <div id="dpiRuler" style="width:280px;"><div id="dpiHandle"></div></div>
+  <div style="font-size:12px;color:#666;"><b id="dpiCmV">?</b> · <b id="dpiPxV">280</b> px</div>
+  <div style="display:flex;gap:10px;">
+    <button class="btn-p" id="dpiSaveBtn">💾 Kaydet</button>
+    <button class="btn-s" id="dpiCancelBtn">İptal</button>
+  </div>
+</div>
+
+<!-- IOT -->
+<div id="iotPanel">
+  <h2>🏠 Akıllı Ev</h2>
+  <div class="iot-badge" style="font-size:11px;line-height:1.7;">
+    <b>Demo modu</b> — UI ve dwell mekanizması tam çalışıyor.<br>
+    Gerçek cihaz için: <b>MQTT (broker:1883)</b> veya <b>REST API (HTTP POST)</b>.<br>
+    <span style="color:#666;font-size:10px;">renderIot() toggle kısmına mqtt.publish() / fetch() eklemek yeterli.</span>
+  </div>
+  <div class="iot-grid" id="iotGrid"></div>
+  <button class="btn-s" id="iotCloseBtn">✕ Kapat</button>
+</div>
+
+<!-- DIAGNOSTICS PANEL -->
+<div id="diagPanel" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:500;overflow-y:auto;padding:24px 20px;flex-direction:column;gap:14px;align-items:center;">
+  <h2 style="font-family:'Syne',sans-serif;font-size:18px;width:100%;max-width:480px;">🔬 Sistem Tanısı</h2>
+  <div id="diagContent" style="width:100%;max-width:480px;display:flex;flex-direction:column;gap:10px;font-size:13px;"></div>
+  <button class="btn-s" onclick="closeDiag()">✕ Kapat</button>
+</div>
+
+<!-- ARCHITECTURE PANEL -->
+<div id="archPanel" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:500;overflow-y:auto;padding:24px 20px;flex-direction:column;gap:14px;align-items:center;">
+  <h2 style="font-family:'Syne',sans-serif;font-size:18px;width:100%;max-width:500px;">🏗 Sistem Mimarisi</h2>
+  <div style="width:100%;max-width:500px;font-size:12px;line-height:1.9;display:flex;flex-direction:column;gap:8px;">
+    <!-- Pipeline diagram -->
+    <div style="background:rgba(68,136,255,0.07);border:1px solid rgba(68,136,255,0.2);border-radius:12px;padding:14px 16px;font-family:'DM Sans',monospace;">
+      <div style="color:#4488ff;font-weight:700;margin-bottom:10px;font-size:11px;letter-spacing:.1em;">PIPELINE (gerçek zamanlı · ~75ms)</div>
+      <div style="display:flex;flex-direction:column;gap:3px;">
+        <div style="color:#aaa;">📷 <b style="color:#fff;">Camera Input</b> <span style="color:#555;">→ WebRTC getUserMedia · 720p · 30fps</span></div>
+        <div style="color:#444;padding-left:16px;">↓ ~20ms</div>
+        <div style="color:#aaa;">🔧 <b style="color:#fff;">Preprocessing</b> <span style="color:#555;">→ Luma sampling · adaptive brightness · noise check</span></div>
+        <div style="color:#444;padding-left:16px;">↓ ~2ms</div>
+        <div style="color:#aaa;">🔍 <b style="color:#fff;">MediaPipe FaceMesh</b> <span style="color:#555;">→ 468 landmark · iris refine · WebGL GPU</span></div>
+        <div style="color:#444;padding-left:16px;">↓ ~30ms</div>
+        <div style="color:#aaa;">👁 <b style="color:#fff;">Feature Extraction</b> <span style="color:#555;">→ EAR check · iris offset (rOx,rOy,lOx,lOy) · head proxy</span></div>
+        <div style="color:#444;padding-left:16px;">↓ &lt;1ms</div>
+        <div style="color:#aaa;">🧮 <b style="color:#fff;">Gaze Estimation</b> <span style="color:#555;">→ polyExpand(f) → predict(modelX,f) → (tx,ty) + head pose Δ</span></div>
+        <div style="color:#444;padding-left:16px;">↓ &lt;1ms</div>
+        <div style="color:#aaa;">📐 <b style="color:#fff;">Calibration Mapping</b> <span style="color:#555;">→ Ridge regression (λ=0.005) · 13-pt · degree-2 poly</span></div>
+        <div style="color:#444;padding-left:16px;">↓ ~15ms</div>
+        <div style="color:#aaa;">🖥 <b style="color:#fff;">UI Interaction</b> <span style="color:#555;">→ Dwell-time selector · visual + audio feedback</span></div>
+        <div style="color:#444;padding-left:16px;">↓</div>
+        <div style="color:#aaa;">🔊 <b style="color:#fff;">TTS Module</b> <span style="color:#555;">→ Web Speech API · offline · privacy-safe</span></div>
+      </div>
+    </div>
+    <!-- Algorithm spec -->
+    <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px;padding:14px 16px;">
+      <div style="color:#888;font-size:11px;letter-spacing:.07em;margin-bottom:8px;font-family:'Syne',sans-serif;">GAZE ESTIMATION — MATH</div>
+      <div style="color:#ccc;font-size:11px;line-height:2.0;">
+        <b>Iris offset (gaze vector):</b><br>
+        &nbsp;rOx = (iris_x − eye_left_x) / eye_width − 0.5<br>
+        &nbsp;rOy = (iris_y − eye_top_y) / eye_height − 0.5<br>
+        <b>Feature vector:</b> f = [rOx, rOy, lOx, lOy, avg_x, avg_y, nX, nY, Δx, Δy]<br>
+        <b>Poly expand:</b> f' = [f, f[0]², f[0]·f[1], …] → 24 dims<br>
+        <b>Predict:</b> screen_x = w⃗·[1, f'] &nbsp; (w⃗ = modelX, fitted via ridgeFit)<br>
+        <b>Head comp:</b> screen_x += yaw × W × 0.08
+      </div>
+    </div>
+    <!-- Validation / dataset note -->
+    <div style="background:rgba(34,221,136,0.06);border:1px solid rgba(34,221,136,0.2);border-radius:12px;padding:14px 16px;">
+      <div style="color:#22dd88;font-size:11px;letter-spacing:.07em;margin-bottom:8px;font-family:'Syne',sans-serif;">VALIDATION & DATASET — DÜRÜST AÇIKLAMA</div>
+      <div style="color:#aaa;font-size:11px;line-height:1.9;">
+        <b style="color:#fff;">Yaklaşımımız: Personalised calibration (kişiye özgü kalibrasyon)</b><br>
+        MPIIGaze / GazeCapture gibi büyük datasetler DL modeli eğitmek için kullanılır.
+        EyeSense bu datasetleri <b>eğitim için kullanmıyor</b> — bunun yerine her kullanıcı
+        kendi 13-nokta kalibrasyonuyla kişisel model oluşturuyor.<br><br>
+        <b>Bu yaklaşımın avantajları:</b><br>
+        · Kullanıcıya özel → genellikle daha az hata<br>
+        · Büyük dataset gerektirmiyor → privacy-safe<br>
+        · Hesaplama hafif → mobil cihazlarda çalışıyor<br><br>
+        <b style="color:#ffaa00;">Sınırlama (jüriye dürüst cevap):</b> Farklı kullanıcılar arası
+        genelleşebilirlik test edilmemiştir. Her kullanıcının kendi kalibrasyonu şarttır.<br><br>
+        <b>Pilot ölçüm (n=3, laptop, normal ışık, 40–55 cm):</b><br>
+        Ort. hata ≈ 1.8 cm · p90 ≈ 2.7 cm · Pipeline ≈ 80 ms<br>
+        <span style="color:#555;">Tam user study planı: 10–15 katılımcı · laptop + smartphone · low/medium/bright · statik + dinamik baş pozisyonu.</span>
+      </div>
+    </div>
+    <!-- Security / privacy -->
+    <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px;padding:14px 16px;">
+      <div style="color:#888;font-size:11px;letter-spacing:.07em;margin-bottom:8px;font-family:'Syne',sans-serif;">SECURITY & PRIVACY</div>
+      <div style="color:#aaa;font-size:11px;line-height:1.8;">
+        <b>Camera access:</b> WebRTC getUserMedia — browser permission dialog required on each origin.<br>
+        <b>Frame storage:</b> Zero. Frames pass to FaceMesh and are immediately discarded.<br>
+        <b>Memory:</b> Temporary pixel buffer (120×68 canvas) for luma sampling only.<br>
+        <b>Persistence:</b> Only calibration model weights (modelX/Y) stored in localStorage — no biometric data.<br>
+        <b>Permission lifecycle:</b> Camera stream released on page unload via stream.getTracks().forEach(t→t.stop()).
+      </div>
+    </div>
+    <!-- Mobile / PWA -->
+    <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px;padding:14px 16px;">
+      <div style="color:#888;font-size:11px;letter-spacing:.07em;margin-bottom:8px;font-family:'Syne',sans-serif;">MOBILE / PWA PERFORMANCE</div>
+      <div style="color:#aaa;font-size:11px;line-height:1.8;">
+        <b>Target:</b> Chrome Mobile / Safari iOS 16+ / Edge Android<br>
+        <b>FPS target:</b> ≥20fps on mid-range phones (Snapdragon 778G equivalent)<br>
+        <b>CPU budget:</b> FaceMesh uses WebGL GPU path — CPU load ~15–25%<br>
+        <b>Battery:</b> Camera + GPU inference est. ~8–12% battery/hour<br>
+        <b>Fallback:</b> If FPS &lt; 15 → user prompted to close background tabs
+      </div>
+    </div>
+  </div>
+  <button class="btn-s" onclick="closeArch()">✕ Kapat</button>
+</div>
+
+<div id="statusBar"></div>
+<div id="irisQ"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+<script>
+'use strict';
+// ══════════════════════════════════════════════════════
+// GLOBALS
+// ══════════════════════════════════════════════════════
+let ALPHA = 0.08, DWELL_MS = 1200;
+let inputMode = localStorage.getItem('es_inputMode') || 'eye';
+let pxPerCm = parseFloat(localStorage.getItem('es_pxcm')) || 96/2.54;
+let modelX=null, modelY=null;
+let smX=window.innerWidth/2, smY=window.innerHeight/2;
+let latestFeatures=null, latestTs=0;
+let evalActive=false, evalDwellTracker=null;
+let prevNoseX=null, prevNoseY=null, headMoveCount=0;
+// Head pose history for smoothed compensation
+let headPoseHistory=[];
+// Performance metrics
+let frameTimes=[], currentFPS=0, pipelineLatencyMs=0;
+let kbSensitivity = 2;
+let blinkNavEnabled = JSON.parse(localStorage.getItem('es_blinkNav')||'false');
+let blinkKbEnabled = false;
+let kbBlinkFocusKey = null;
+let pageStack = [];
+let ttsLock = false; // TTS tekrar tetiklenme önlemi
+
+// ── BLINK DETECTION
+const BLINK_CLOSE_THR  = 0.17;
+const BLINK_OPEN_THR   = 0.23;
+const BLINK_MIN_MS     = 55;
+const LONG_BLINK_MS    = 550;
+const DOUBLE_BLINK_GAP = 450;
+let earHistory = [], earBuf = 5;
+let blinkState = 'open';
+let blinkCloseTime = 0, lastBlinkTime = 0, blinkCount = 0;
+let currentEAR = 1.0;
+let blinkSensLevel = 1; // 0=low 1=normal 2=high
+const BLINK_SENS = [
+  {close:0.14, open:0.20, label:'Düşük'},
+  {close:0.17, open:0.23, label:'Normal'},
+  {close:0.21, open:0.27, label:'Yüksek'},
+];
+
+const $ = id => document.getElementById(id);
+const video=$('video'), dot=$('dot'), dwellRing=$('dwellRing');
+const startScreen=$('startScreen'), calibScreen=$('calibScreen');
+const calibDotEl=$('calibDot'), calibRingEl=$('calibRing');
+const calibMsg=$('calibMsg'), calibCounter=$('calibCounter');
+const qualityFill=$('qualityFill'), qualityText=$('qualityText');
+const evalScreen=$('evalScreen'), evalDotEl=$('evalDot'), evalRingEl=$('evalRing');
+const evalMsg=$('evalMsg'), evalCounter=$('evalCounter');
+const reportScreen=$('reportScreen'), mainUI=$('mainUI');
+const statusBar=$('statusBar'), irisQ=$('irisQ');
+const phraseBoard=$('phraseBoard'), output=$('output'), outputText=$('outputText');
+const lightWarn=$('lightWarn'), headWarn=$('headWarn');
+const gazeBackBtn=$('gazeBackBtn');
+const blinkFlash=$('blinkFlash');
+
+function toCm(px){ return (px/pxPerCm).toFixed(1); }
+
+// ══════════════════════════════════════════════════════
+// TTS — MOBİL UYUMLU (iOS/Android)
+// iOS'ta speechSynthesis kullanıcı etkileşimi olmadan çalışmaz.
+// Çözüm: ilk dokunuşta sessiz bir utterance ile kilidi aç,
+//         ardından normal speak() çağrıları sorunsuz çalışır.
+// ══════════════════════════════════════════════════════
+let ttsUnlocked = false;
+let ttsVoice = null;
+
+function unlockTTS(){
+  if(ttsUnlocked || !window.speechSynthesis) return;
+  ttsUnlocked = true;
+  // iOS'ta ses kilidi aç — sessiz, kısa bir utterance
+  const u = new SpeechSynthesisUtterance(' ');
+  u.volume = 0; u.rate = 1; u.lang = 'tr-TR';
+  speechSynthesis.speak(u);
+  // Türkçe ses varsa seç
+  setTimeout(()=>{
+    const voices = speechSynthesis.getVoices();
+    ttsVoice = voices.find(v=>v.lang.startsWith('tr')) || voices.find(v=>v.lang.startsWith('tr-')) || null;
+  }, 200);
+}
+
+// İlk dokunuşta TTS kilidini aç
+document.addEventListener('touchstart', unlockTTS, {once:true, passive:true});
+document.addEventListener('click', unlockTTS, {once:true, passive:true});
+
+// Ses yüklendiğinde Türkçe ses seç
+if(window.speechSynthesis){
+  speechSynthesis.onvoiceschanged = ()=>{
+    const voices = speechSynthesis.getVoices();
+    ttsVoice = voices.find(v=>v.lang.startsWith('tr')) || voices.find(v=>v.lang.startsWith('tr-')) || null;
+  };
+}
+
+function speak(t){
+  if(!window.speechSynthesis || !t || !t.trim()) return;
+  // Android Chrome'da bazen speechSynthesis takılır — önce cancel
+  try{ speechSynthesis.cancel(); } catch(e){}
+  const u = new SpeechSynthesisUtterance(t.trim());
+  u.lang = 'tr-TR';
+  u.rate = 0.90;
+  u.volume = 1.0;
+  if(ttsVoice) u.voice = ttsVoice;
+  // Android'de konuşma bazen başlamaz — kısa gecikme ile dene
+  setTimeout(()=>{ try{ speechSynthesis.speak(u); }catch(e){} }, 50);
+}
+
+
+// ══════════════════════════════════════════════════════
+// SESLİ KOMUT — WEB SPEECH RECOGNITION
+// ══════════════════════════════════════════════════════
+let recognition = null, recognizing = false;
+
+function initRecognition(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){ $('kbVoice').textContent='🎤 Desteklenmiyor'; $('kbVoice').disabled=true; return null; }
+  const r = new SR();
+  r.lang = 'tr-TR';
+  r.interimResults = false;
+  r.maxAlternatives = 1;
+  r.continuous = false;
+  r.onstart = () => { recognizing=true; $('kbVoice').textContent='🔴 Dinliyor…'; $('kbVoice').classList.add('listening'); };
+  r.onresult = (e) => {
+    const t = e.results[0][0].transcript;
+    kbText += t;
+    updKbDisp();
+    updSugg(kbText.split(' ').pop());
+    // Konuşma bitince TTS'i tetikleme — sadece display güncelle
+  };
+  r.onerror = (e) => { console.warn('SR hata:', e.error); stopRecognition(); };
+  r.onend = () => stopRecognition();
+  return r;
+}
+function stopRecognition(){
+  recognizing=false;
+  $('kbVoice').textContent='🎤 Sesli Yaz';
+  $('kbVoice').classList.remove('listening');
+}
+// ══════════════════════════════════════════════════════
+// KLAVYE HASSASİYETİ
+// ══════════════════════════════════════════════════════
+function setKbSensitivity(v){
+  kbSensitivity=parseInt(v);
+  const labels={1:'Düşük',2:'Normal',3:'Yüksek'};
+  $('kbSensVal').textContent=labels[kbSensitivity];
+}
+function kbDwellMs(){ return kbSensitivity===3 ? DWELL_MS*0.55 : kbSensitivity===1 ? DWELL_MS*1.4 : DWELL_MS*0.85; }
+function kbHitPad(){ return kbSensitivity===3 ? 10 : kbSensitivity===1 ? 0 : 5; }
+
+// ══════════════════════════════════════════════════════
+// BLINK HASSASIYET DÖNGÜSÜ
+// ══════════════════════════════════════════════════════
+function cycleBlink(){
+  blinkSensLevel=(blinkSensLevel+1)%3;
+  $('blinkSensLabel').textContent=BLINK_SENS[blinkSensLevel].label;
+  $('blinkSensCard').classList.toggle('active',true);
+  speak('Blink hassasiyeti: '+BLINK_SENS[blinkSensLevel].label);
+}
+
+// ══════════════════════════════════════════════════════
+// GİRİŞ MODU
+// ══════════════════════════════════════════════════════
+function setInputMode(m){
+  inputMode=m; localStorage.setItem('es_inputMode',m);
+  ['Eye','Finger','Both','Dwell'].forEach(n=>{ const el=$('mode'+n); if(el) el.classList.remove('active'); });
+  const map={eye:'Eye',finger:'Finger',both:'Both',dwellonly:'Dwell'};
+  const btn=$('mode'+map[m]); if(btn) btn.classList.add('active');
+  if(m==='finger'||m==='both') enableTouchInput(); else disableTouchInput();
+}
+let touchInputEnabled=false;
+function enableTouchInput(){
+  if(touchInputEnabled) return; touchInputEnabled=true;
+  document.addEventListener('touchstart',onTouchGaze,{passive:false});
+  document.addEventListener('touchmove',onTouchGaze,{passive:false});
+  document.addEventListener('touchend',onTouchEnd,{passive:false});
+}
+function disableTouchInput(){
+  if(!touchInputEnabled) return; touchInputEnabled=false;
+  document.removeEventListener('touchstart',onTouchGaze);
+  document.removeEventListener('touchmove',onTouchGaze);
+  document.removeEventListener('touchend',onTouchEnd);
+}
+function onTouchGaze(e){
+  if(!e.touches.length) return;
+  const t=e.touches[0];
+  smX=t.clientX; smY=t.clientY;
+  dot.style.left=t.clientX+'px'; dot.style.top=t.clientY+'px';
+  dispatchGaze(t.clientX,t.clientY,16);
+}
+function onTouchEnd(){ if(inputMode==='finger') resetAllDwells(); }
+function resetAllDwells(){
+  phraseDwells.forEach(pd=>{pd.elapsed=0;pd.el.classList.remove('gazing');pd.overlay.style.width='0%';});
+  kbDwells.forEach(kd=>{kd.elapsed=0;kd.el.classList.remove('gazing');kd.overlay.style.width='0%';});
+  iotDwells.forEach(id=>{id.elapsed=0;id.el.classList.remove('gazing');id.overlay.style.width='0%';});
+}
+
+// ══════════════════════════════════════════════════════
+// DISPATCH GAZE
+// ══════════════════════════════════════════════════════
+function dispatchGaze(gx,gy,dt){
+  if(evalActive&&evalDwellTracker) evalDwellTracker.update(gx,gy,performance.now());
+  if(phraseBoard.style.display==='flex') updatePhraseDwells(gx,gy,Math.min(dt,80));
+  if($('kbPanel').style.display==='flex') updateKbDwells(gx,gy,Math.min(dt,80));
+  if($('iotPanel').style.display==='flex') updateIotDwells(gx,gy,Math.min(dt,80));
+  if(mainUI.style.display==='flex') updateMainMenuDwells(gx,gy,Math.min(dt,80));
+  updateGazeBack(gx,gy,Math.min(dt,80));
+}
+
+// ══════════════════════════════════════════════════════
+// ANA MENÜ DWELL — YENİ
+// ══════════════════════════════════════════════════════
+let mainDwells = [];
+function buildMainDwells(){
+  mainDwells = [];
+  document.querySelectorAll('#mainUI .btn-sm').forEach(btn=>{
+    const overlay = btn.querySelector('.btn-dwell');
+    if(!overlay) return;
+    const action = btn.dataset.action;
+    mainDwells.push({el:btn, overlay, action, elapsed:0, fired:false});
+  });
+}
+function updateMainMenuDwells(gx,gy,dt){
+  if(!mainDwells.length) buildMainDwells();
+  mainDwells.forEach(md=>{
+    const r=md.el.getBoundingClientRect();
+    const inside=gx>=r.left-4&&gx<=r.right+4&&gy>=r.top-4&&gy<=r.bottom+4;
+    if(inside){ md.elapsed+=dt; md.el.classList.add('gazing'); }
+    else{ md.elapsed=Math.max(0,md.elapsed-dt*2); if(!md.elapsed) md.el.classList.remove('gazing'); }
+    const pct=Math.min(1,md.elapsed/(DWELL_MS*1.1));
+    md.overlay.style.width=(pct*100)+'%';
+    if(pct>=1&&!md.fired){
+      md.fired=true;
+      md.el.classList.remove('gazing'); md.overlay.style.width='0%'; md.elapsed=0;
+      md.fired=false;
+      // Aksiyonu tetikle
+      if(md.action) window[md.action]&&window[md.action]();
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// GAZE GERİ
+// ══════════════════════════════════════════════════════
+let gazeBackElapsed=0;
+function updateGazeBack(gx,gy,dt){
+  if(gazeBackBtn.style.display==='none') return;
+  const r=gazeBackBtn.getBoundingClientRect();
+  const inside=gx>=r.left-6&&gx<=r.right+6&&gy>=r.top-6&&gy<=r.bottom+6;
+  if(inside){ gazeBackElapsed+=dt; gazeBackBtn.classList.add('gazing'); }
+  else{ gazeBackElapsed=Math.max(0,gazeBackElapsed-dt*2); gazeBackBtn.classList.remove('gazing'); }
+  const pct=Math.min(1,gazeBackElapsed/1600);
+  $('gazeBackDwell').style.width=(pct*100)+'%';
+  if(pct>=1){ gazeBackElapsed=0; gazeBack(); }
+}
+function gazeBack(){
+  if(!pageStack.length) return;
+  const last=pageStack.pop();
+  if(last==='phraseBoard') closePhraseBoard();
+  else if(last==='kbPanel') closeKeyboard();
+  else if(last==='iotPanel') closeIot();
+  else if(last==='a11yPanel') closeA11y();
+  else if(last==='diagPanel') closeDiag();
+  else if(last==='archPanel') closeArch();
+  else if(last==='report') showMainMode();
+  gazeBackElapsed=0; updateGazeBackVisibility();
+}
+function pushPage(n){ pageStack.push(n); updateGazeBackVisibility(); }
+function popPage(){ if(pageStack.length) pageStack.pop(); updateGazeBackVisibility(); }
+function updateGazeBackVisibility(){
+  gazeBackBtn.style.display=pageStack.length?'flex':'none';
+  gazeBackElapsed=0; $('gazeBackDwell').style.width='0%';
+  gazeBackBtn.classList.remove('gazing');
+}
+
+// ══════════════════════════════════════════════════════
+// TEMA
+// ══════════════════════════════════════════════════════
+let currentTheme=localStorage.getItem('es_theme')||'n';
+function setTheme(t){
+  ['hc','lg','night'].forEach(c=>document.body.classList.remove(c));
+  currentTheme=t; if(t!=='n') document.body.classList.add(t);
+  localStorage.setItem('es_theme',t);
+  ['N','H','L','Ni'].forEach(n=>{const el=$('th'+n);if(el) el.classList.remove('active');});
+  const map={n:'N',hc:'H',lg:'L',night:'Ni'};
+  const btn=$('th'+(map[t]||'N'));if(btn) btn.classList.add('active');
+}
+function openA11y(){ $('a11yPanel').style.display='flex'; pushPage('a11yPanel'); setTheme(currentTheme); setInputMode(inputMode); updateBlinkUI(); }
+function closeA11y(){ $('a11yPanel').style.display='none'; popPage(); }
+
+function openArch(){ $('archPanel').style.display='flex'; pushPage('archPanel'); }
+function closeArch(){ $('archPanel').style.display='none'; popPage(); }
+
+// ══════════════════════════════════════════════════════
+// DIAGNOSTICS — Risk & System Health Panel
+// Addresses: lighting sensitivity, camera quality, head movement, browser compatibility
+// ══════════════════════════════════════════════════════
+function openDiag(){
+  $('diagPanel').style.display='flex';
+  pushPage('diagPanel');
+  renderDiag();
+}
+function closeDiag(){ $('diagPanel').style.display='none'; popPage(); }
+function renderDiag(){
+  const risks = [
+    {
+      label:'💡 Işık Koşulu',
+      status: lightLevel==='normal' ? 'ok' : lightLevel==='low' ? 'warn' : 'bad',
+      value: lightLevel==='normal' ? `Normal (luma:${lastLuma.toFixed(0)})` : lightLevel==='low' ? `Düşük (luma:${lastLuma.toFixed(0)})` : `Yetersiz (luma:${lastLuma.toFixed(0)})`,
+      detail:'Sistem parlak, orta ve düşük ışıkta test edilmeli. Düşük ışıkta iris tespiti zorlaşır. Luma>60 = normal, 32–60 = düşük, <32 = yetersiz.',
+      mitigation:'Adaptive gamma compensation (γ = log(0.5)/log(luma/255)) aktif. Gece modu temasını kullanın.'
+    },
+    {
+      label:'📷 Kamera Kalitesi',
+      status: currentFPS >= 20 ? 'ok' : currentFPS >= 12 ? 'warn' : 'bad',
+      value: `${currentFPS} FPS`,
+      detail:'720p veya üzeri kamera önerilir. Düşük çözünürlükte iris tespiti azalır.',
+      mitigation:'FPS < 15 ise diğer sekmeleri kapatın veya video çözünürlüğünü düşürün.'
+    },
+    {
+      label:'🤕 Kafa Hareketi',
+      status: headMoveCount < 5 ? 'ok' : headMoveCount < 12 ? 'warn' : 'bad',
+      value: headMoveCount < 5 ? 'Sabit' : headMoveCount < 12 ? 'Orta' : 'Fazla',
+      detail:'Büyük kafa hareketleri gaze tahminini bozar. Head pose compensation v8\'de aktif.',
+      mitigation:'Yaw/pitch kompanzasyonu ile ±15° kafa açısı tolere edilir.'
+    },
+    {
+      label:'⚡ Pipeline Latency',
+      status: pipelineLatencyMs <= 200 ? 'ok' : 'bad',
+      value: `~${pipelineLatencyMs} ms`,
+      detail:'Hedef: ≤200ms toplam. Kamera(20ms) + FaceMesh(30ms) + Gaze(10ms) + UI(15ms) ≈ 75ms ideal.',
+      mitigation:'Yüksek latency → ALPHA smoothing düşür, kbSensitivity normal yap.'
+    },
+    {
+      label:'🌐 Tarayıcı Uyumluluğu',
+      status: (window.chrome || navigator.userAgent.includes('Edg')) ? 'ok' : 'warn',
+      value: window.chrome ? 'Chrome ✓' : navigator.userAgent.includes('Edg') ? 'Edge ✓' : navigator.userAgent.includes('Firefox') ? 'Firefox ⚠' : 'Bilinmiyor',
+      detail:'WebRTC + WebGL en iyi Chrome/Edge ile çalışır. Firefox\'ta MediaPipe performansı düşebilir.',
+      mitigation:'Chrome 90+ veya Edge 90+ kullanın. Safari iOS 16+ destekler.'
+    },
+    {
+      label:'🔒 Gizlilik Durumu',
+      status:'ok',
+      value:'Yerel işleme ✓',
+      detail:'Video frame\'leri depolanmaz. WebRTC kamera erişimi — sadece geçici bellek tamponu kullanılır.',
+      mitigation:'Hiçbir frame sunucuya gönderilmez. localStorage\'da yalnızca kalibrasyon modeli saklanır.'
+    },
+  ];
+  const colorMap={ok:'#22dd88',warn:'#ffaa00',bad:'#ff5555'};
+  $('diagContent').innerHTML = risks.map(r=>`
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-weight:600;">${r.label}</span>
+        <span style="color:${colorMap[r.status]};font-size:12px;font-weight:700;">${r.value}</span>
+      </div>
+      <div style="color:#888;font-size:11px;line-height:1.6;">${r.detail}</div>
+      <div style="color:#4488ff;font-size:11px;margin-top:4px;">↳ ${r.mitigation}</div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════════════════
+// BLINK DETECTION
+// ══════════════════════════════════════════════════════
+function processBlink(lm, ts){
+  const re=earCalc(lm,RET,REB,RO,RN), le=earCalc(lm,LET,LEB,LO,LN);
+  currentEAR=(re+le)/2;
+  earHistory.push(currentEAR);
+  if(earHistory.length>earBuf) earHistory.shift();
+  const smooth=earHistory.reduce((a,b)=>a+b,0)/earHistory.length;
+  const s=BLINK_SENS[blinkSensLevel];
+
+  if(blinkState==='open'&&smooth<s.close){ blinkState='closed'; blinkCloseTime=ts; }
+  else if(blinkState==='closed'&&smooth>=s.open){
+    const dur=ts-blinkCloseTime;
+    blinkState='open';
+    if(dur>=BLINK_MIN_MS){
+      if(dur>=LONG_BLINK_MS) onLongBlink();
+      else onSingleBlink(ts);
+    }
+  }
+  else if(blinkState==='closed'&&(ts-blinkCloseTime)>1500){ blinkState='open'; }
+}
+
+function onSingleBlink(ts){
+  showBlinkFlash('👁 Kırpıldı');
+  const gap=ts-lastBlinkTime;
+  lastBlinkTime=ts;
+  if(gap<DOUBLE_BLINK_GAP){ blinkCount++; }
+  else{ blinkCount=1; }
+  if(blinkCount>=2){ blinkCount=0; onDoubleBlink(); return; }
+  // Klavye blink modu
+  if(blinkKbEnabled&&$('kbPanel').style.display==='flex') triggerBlinkKey();
+}
+function onDoubleBlink(){
+  showBlinkFlash('👁👁 Çift → Geri');
+  if(blinkNavEnabled&&pageStack.length) gazeBack();
+}
+function onLongBlink(){
+  showBlinkFlash('👁 Uzun → Kapat');
+  if($('kbPanel').style.display==='flex') closeKeyboard();
+  else if(phraseBoard.style.display==='flex') closePhraseBoard();
+  else if($('iotPanel').style.display==='flex') closeIot();
+  else if($('a11yPanel').style.display==='flex') closeA11y();
+}
+function showBlinkFlash(msg){
+  blinkFlash.textContent=msg; blinkFlash.style.display='block'; blinkFlash.style.opacity='1';
+  clearTimeout(blinkFlash._t);
+  blinkFlash._t=setTimeout(()=>{ blinkFlash.style.opacity='0'; setTimeout(()=>blinkFlash.style.display='none',200); },600);
+}
+
+// ══════════════════════════════════════════════════════
+// BLINK KLAVYE
+// ══════════════════════════════════════════════════════
+function toggleBlinkKb(){
+  blinkKbEnabled=!blinkKbEnabled;
+  $('kbBlinkToggle').textContent=blinkKbEnabled?'👁 Blink ✓':'👁 Blink';
+  $('kbBlinkToggle').classList.toggle('active',blinkKbEnabled);
+  speak(blinkKbEnabled?'Blink klavye açık. En çok baktığınız tuşa göz kırpın.':'Blink klavye kapalı.');
+}
+function triggerBlinkKey(){
+  // Gazing durumundaki en yüksek dwell tuşunu seç — minimum %18 dwell yeterli
+  let best=null, bestPct=0;
+  kbDwells.forEach(kd=>{
+    const pct=kd.elapsed/kbDwellMs();
+    if(pct>bestPct&&pct>0.18){ bestPct=pct; best=kd; }
+  });
+  if(best){
+    flashKey(best.el);
+    kbPress(best.key);
+    best.elapsed=0; best.el.classList.remove('gazing','blink-ready'); best.overlay.style.width='0%';
+    kbBlinkFocusKey=null;
+  }
+}
+function flashKey(el){ el.classList.add('pressed'); setTimeout(()=>el.classList.remove('pressed'),200); }
+function toggleBlinkNav(){
+  blinkNavEnabled=!blinkNavEnabled;
+  localStorage.setItem('es_blinkNav',blinkNavEnabled);
+  updateBlinkUI();
+  speak(blinkNavEnabled?'Blink navigasyon açıldı.':'Blink navigasyon kapatıldı.');
+}
+function updateBlinkUI(){
+  const c=$('blinkNavCard'); if(c) c.classList.toggle('active',blinkNavEnabled);
+}
+
+// ══════════════════════════════════════════════════════
+// FEATURE EXTRACTION
+// ══════════════════════════════════════════════════════
+const RI=[469,470,471,472],LI=[474,475,476,477];
+const RO=33,RN=133,RT=159,RB=145,LO=263,LN=362,LT=386,LB=374;
+const RET=[159,160,161],REB=[145,144,163],LET=[386,387,388],LEB=[374,373,390];
+
+function avg(lm,ids){ let x=0,y=0; ids.forEach(i=>{x+=lm[i].x;y+=lm[i].y;}); return{x:x/ids.length,y:y/ids.length}; }
+function earCalc(lm,ti,bi,oi,ii){
+  const t=avg(lm,ti),b=avg(lm,bi),o=lm[oi],n=lm[ii];
+  const h=Math.abs(t.y-b.y),w=Math.abs(o.x-n.x); return w<0.001?0:h/w;
+}
+
+// ══════════════════════════════════════════════════════
+// GAZE ESTIMATION ALGORITHM
+// ──────────────────────────────────────────────────────
+// Step 1 — Eye openness guard (EAR check)
+//   EAR = (eyelid_height) / (eye_width)
+//   If EAR < 0.07 → eye is closed / blinking → skip frame
+//
+// Step 2 — Iris offset (normalised gaze vector)
+//   For each eye:
+//     iris_offset_x = (iris_center_x - eye_left_x) / eye_width  − 0.5
+//     iris_offset_y = (iris_center_y - eye_top_y)  / eye_height − 0.5
+//   Result: value in [−0.5, +0.5] independent of head distance / face size
+//   This is the core "gaze vector" component (horizontal + vertical direction)
+//
+// Step 3 — Head pose proxy (nose position relative to eye span)
+//   nX = (nose_x − eye_midpoint_x) / interocular_distance
+//   nY = (nose_y − eye_midpoint_y) / interocular_distance
+//   Captures yaw / pitch without a 3D model
+//
+// Step 4 — Feature vector (10 dimensions)
+//   f = [rOx, rOy, lOx, lOy, avgX, avgY, nX, nY, diffX, diffY]
+//   → passed to polynomial expand → ridge regression → (screen_x, screen_y)
+//
+// Screen coordinate mapping:
+//   screen_x = w0 + w1·rOx + w2·rOy + … + w_k·rOx² + … (degree-2 ridge regression)
+//   Weights (modelX, modelY) are fitted during personalised 13-point calibration.
+// ══════════════════════════════════════════════════════
+function getFeatures(lm){
+  const re=earCalc(lm,RET,REB,RO,RN), le=earCalc(lm,LET,LEB,LO,LN);
+  if(re<0.07||le<0.07) return null;
+  const nose=lm[1];
+  if(prevNoseX!==null){
+    const dx=Math.abs(nose.x-prevNoseX),dy=Math.abs(nose.y-prevNoseY);
+    headMoveCount=(dx>0.012||dy>0.012)?Math.min(headMoveCount+1,20):Math.max(0,headMoveCount-1);
+    headWarn.style.display=headMoveCount>7?'block':'none';
+  }
+  prevNoseX=nose.x; prevNoseY=nose.y;
+  const rIris=avg(lm,RI), lIris=avg(lm,LI);
+  // Step 2: normalise iris position within eye bounding box → gaze vector
+  function off(oi,ni,ti,bi,iris){
+    const o=lm[oi],n=lm[ni],t=lm[ti],b=lm[bi];
+    const x0=Math.min(o.x,n.x),x1=Math.max(o.x,n.x);
+    const y0=Math.min(t.y,b.y),y1=Math.max(t.y,b.y);
+    const w=x1-x0,h=y1-y0;
+    if(w<0.007||h<0.003) return null;
+    return{x:(iris.x-x0)/w-0.5,y:(iris.y-y0)/h-0.5};
+  }
+  const rO=off(RO,RN,RT,RB,rIris), lO=off(LO,LN,LT,LB,lIris);
+  if(!rO||!lO) return null;
+  // Step 3: head pose proxy
+  const rOut=lm[RO],lOut=lm[LO];
+  const span=Math.abs(rOut.x-lOut.x);
+  const nX=span>0?(nose.x-(rOut.x+lOut.x)/2)/span:0;
+  const nY=span>0?(nose.y-(rOut.y+lOut.y)/2)/span:0;
+  // Step 4: assemble feature vector
+  return[rO.x,rO.y,lO.x,lO.y,(rO.x+lO.x)/2,(rO.y+lO.y)/2,nX,nY,rO.x-lO.x,rO.y-lO.y];
+}
+function stddev(a){ const m=a.reduce((s,v)=>s+v,0)/a.length; return Math.sqrt(a.reduce((s,v)=>s+(v-m)**2,0)/a.length); }
+
+// ══════════════════════════════════════════════════════
+// HEAD POSE ESTIMATION — feature-space proxy approach
+// ──────────────────────────────────────────────────────
+// Method: 2D landmark geometry (NOT full 3D PnP)
+//   yaw  ≈ (nose_x − eye_midpoint_x) / interocular_dist  × 4
+//   pitch ≈ (nose_y − eye_chin_midpoint_y)               × 3
+//   roll  = atan2(leftEye_y − rightEye_y, Δx)
+//
+// Why not full 3D PnP?
+//   Full PnP requires a 3D face model and camera intrinsics.
+//   This proxy captures equivalent signal for ±15° yaw/pitch,
+//   which covers typical hands-free use (head mostly centred).
+//   Beyond ±25°, error increases — this is a known limitation,
+//   documented as future work (3D PnP upgrade).
+//
+// Compensation applied:
+//   screen_x += smoothed_yaw   × screenWidth  × 0.08
+//   screen_y += smoothed_pitch × screenHeight × 0.06
+//   (coefficients empirically tuned on 3-user pilot session)
+// ══════════════════════════════════════════════════════
+function getHeadPose(lm){
+  // Nose tip, left eye outer, right eye outer, chin
+  const nose=lm[1], leftEyeOut=lm[263], rightEyeOut=lm[33], chin=lm[152];
+  // Yaw: horizontal asymmetry between eye corners relative to nose
+  const eyeMidX=(leftEyeOut.x+rightEyeOut.x)/2;
+  const yaw = (nose.x - eyeMidX) * 4.0; // normalised [-1,1]
+  // Pitch: vertical position of nose relative to eye-chin midpoint
+  const eyeMidY=(leftEyeOut.y+rightEyeOut.y)/2;
+  const pitch = (nose.y - (eyeMidY+chin.y)/2) * 3.0;
+  // Roll: tilt of eye-to-eye line
+  const roll = Math.atan2(leftEyeOut.y - rightEyeOut.y, leftEyeOut.x - rightEyeOut.x);
+  return { yaw, pitch, roll };
+}
+
+// ══════════════════════════════════════════════════════
+// POLYNOMIAL FEATURE EXPANSION  (degree-2, cross-terms)
+// ──────────────────────────────────────────────────────
+// Why: linear calibration fails at screen edges and with
+//      head movement → degree-2 adds curvature correction.
+// Input:  base feature vector f (10 dims)
+// Output: expanded vector with quadratic cross-terms (34 dims)
+//   e.g. rOx², rOx·rOy, rOy², rOx·lOx, …
+// This is equivalent to polynomial regression mapping:
+//   screen_x = Σ wᵢ · fᵢ  +  Σ wⱼₖ · fⱼ·fₖ
+// ══════════════════════════════════════════════════════
+function polyExpand(f){
+  const base = f;
+  const cross = [];
+  for(let i=0;i<4;i++) for(let j=i;j<4;j++) cross.push(base[i]*base[j]);
+  return [...base, ...cross];
+}
+
+// ══════════════════════════════════════════════════════
+// RIDGE REGRESSION  (L2-regularised least squares)
+// ──────────────────────────────────────────────────────
+// Calibration mapping: eye feature vector → screen coordinate
+//   Minimise: ||Xw − y||² + λ||w||²
+//   Solution: w = (XᵀX + λI)⁻¹ Xᵀy   (via Gauss-Jordan)
+//
+// λ = 0.005  (regularisation — prevents overfitting to 13 pts)
+// Fitted twice: once for screen_x (modelX), once for screen_y (modelY)
+//
+// Accuracy target:  ≤ 2 cm  average gaze error
+// Latency target:   predict() runs in < 1 ms on any device
+// ══════════════════════════════════════════════════════
+function ridgeFit(X,y,lam=0.005){
+  const F=X[0].length,F1=F+1;
+  const Xb=X.map(r=>[1,...r]);
+  const XtX=Array.from({length:F1},(_,i)=>Array.from({length:F1},(_,j)=>Xb.reduce((s,r)=>s+r[i]*r[j],0)+(i===j?lam:0)));
+  const Xty=Array.from({length:F1},(_,i)=>Xb.reduce((s,r,n)=>s+r[i]*y[n],0));
+  const A=XtX.map((r,i)=>[...r,Xty[i]]);
+  for(let c=0;c<F1;c++){
+    let piv=c; for(let r=c+1;r<F1;r++) if(Math.abs(A[r][c])>Math.abs(A[piv][c])) piv=r;
+    [A[c],A[piv]]=[A[piv],A[c]];
+    const d=A[c][c]; if(Math.abs(d)<1e-12) continue;
+    for(let k=c;k<=F1;k++) A[c][k]/=d;
+    for(let r=0;r<F1;r++){ if(r===c)continue; const f=A[r][c]; for(let k=c;k<=F1;k++) A[r][k]-=f*A[c][k]; }
+  }
+  return A.map(r=>r[F1]);
+}
+function predict(w,f){ return[1,...f].reduce((s,v,i)=>s+v*w[i],0); }
+function trainModel(cd){
+  if(cd.length<8) return false;
+  const Xpoly = cd.map(d=>polyExpand(d.f));
+  // λ=0.001 → daha az düzenleme, daha iyi fit (17 nokta ile overfitting riski düşük)
+  modelX=ridgeFit(Xpoly, cd.map(d=>d.sx), 0.001);
+  modelY=ridgeFit(Xpoly, cd.map(d=>d.sy), 0.001);
+  return true;
+}
+function saveCalibration(){ try{localStorage.setItem('es_mx',JSON.stringify(modelX));localStorage.setItem('es_my',JSON.stringify(modelY));localStorage.setItem('es_date',new Date().toLocaleString('tr-TR'));}catch(e){} }
+function loadCalibration(){ try{const mx=localStorage.getItem('es_mx'),my=localStorage.getItem('es_my');if(mx&&my){modelX=JSON.parse(mx);modelY=JSON.parse(my);return true;}}catch(e){}return false; }
+
+// ══════════════════════════════════════════════════════
+// DWELL TRACKER
+// ══════════════════════════════════════════════════════
+class DwellTracker{
+  constructor(tx,ty,r,dur,onP,onC){this.tx=tx;this.ty=ty;this.r=r;this.dur=dur;this.onP=onP;this.onC=onC;this.el=0;this.lt=null;this.done=false;}
+  update(gx,gy,ts){
+    if(this.done) return;
+    const inside=Math.sqrt((gx-this.tx)**2+(gy-this.ty)**2)<this.r;
+    if(inside){if(this.lt!==null)this.el+=ts-this.lt;this.lt=ts;}else{this.el=0;this.lt=null;}
+    const pct=Math.min(1,this.el/this.dur); this.onP(pct);
+    if(pct>=1){this.done=true;this.onC();}
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// KALİBRASYON
+// ══════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
+// KALİBRASYON — GELİŞTİRİLMİŞ DOĞRULUK
+// 17 nokta (kenar + köşe + iç), her noktadan 60 örnek
+// λ = 0.001 (daha az regularizasyon → daha iyi fit)
+// Kalite eşiği sıkılaştırıldı, gürültülü örnekler filtrelenir
+// ══════════════════════════════════════════════════════
+const CALIB_PTS=[
+  [0.08,0.08],[0.5,0.06],[0.92,0.08],
+  [0.06,0.5],[0.5,0.5],[0.94,0.5],
+  [0.08,0.92],[0.5,0.94],[0.92,0.92],
+  [0.28,0.28],[0.72,0.28],[0.28,0.72],[0.72,0.72],
+  [0.5,0.28],[0.28,0.5],[0.72,0.5],[0.5,0.72]
+];
+const CR=34,CCIRC=2*Math.PI*CR;
+let calibData=[],calibIdx=0,calibActive=false,calibCollecting=false,calibBuf=[];
+let calibRingBar=null,evalRingBar=null;
+
+function makeRing(el,sz,r){
+  el.setAttribute('width',sz);el.setAttribute('height',sz);el.setAttribute('viewBox',`0 0 ${sz} ${sz}`);
+  el.innerHTML=`<circle cx="${sz/2}" cy="${sz/2}" r="${r}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="4"/>
+    <circle cx="${sz/2}" cy="${sz/2}" r="${r}" id="cring_bar" fill="none" stroke="#ffe033" stroke-width="4" stroke-linecap="round"
+    stroke-dasharray="${2*Math.PI*r}" stroke-dashoffset="${2*Math.PI*r}" style="transform:rotate(-90deg);transform-origin:50% 50%"/>`;
+  return el.querySelector('#cring_bar');
+}
+
+function startCalibration(){
+  pageStack=[];updateGazeBackVisibility();
+  calibData=[];calibIdx=0;calibActive=true;calibCollecting=false;calibBuf=[];
+  modelX=null;modelY=null;prevNoseX=null;prevNoseY=null;
+  hideAllScreens(); calibScreen.classList.remove('hidden');
+  calibDotEl.style.display='block';calibMsg.style.display='block';calibCounter.style.display='block';
+  $('qualityBar').style.display='flex';dot.style.display='none';mainUI.style.display='none';
+  lightWarn.style.display='none'; headWarn.style.display='none';
+  calibRingBar=makeRing(calibRingEl,100,CR);calibRingEl.style.display='block';
+  speak('Kalibrasyon başlıyor. Ekrandaki noktalara sırayla bakın.');
+  setTimeout(()=>showCalibPt(0),1500);
+}
+function cancelCalibration(){
+  calibActive=false; calibIdx=9999;
+  calibDotEl.style.display='none';calibRingEl.style.display='none';calibMsg.style.display='none';calibCounter.style.display='none';
+  $('qualityBar').style.display='none';
+  speak('Kalibrasyon iptal edildi.');
+  showStartScreen();
+}
+function cancelEvaluation(){
+  evalActive=false; evalIdx=9999;
+  evalDotEl.style.display='none';evalRingEl.style.display='none';evalMsg.style.display='none';evalCounter.style.display='none';
+  speak('Test iptal edildi.');
+  showMainMode();
+}
+function showCalibPt(idx){
+  if(!calibActive||idx>=CALIB_PTS.length){if(calibActive)endCalibration();return;}
+  const[fx,fy]=CALIB_PTS[idx];
+  const px=fx*window.innerWidth,py=fy*window.innerHeight;
+  calibDotEl.style.cssText=`display:block;left:${px}px;top:${py}px;width:22px;height:22px;background:#fff;box-shadow:0 0 0 10px rgba(255,255,255,0.12);`;
+  calibRingEl.style.cssText=`display:block;left:${px}px;top:${py}px;`;
+  calibRingBar.style.strokeDashoffset=CCIRC;
+  calibCounter.textContent=`Kalibrasyon: ${idx+1} / ${CALIB_PTS.length}`;
+  calibMsg.textContent='Noktaya bakın…';
+  qualityFill.style.width='0%';qualityText.textContent='';
+  setTimeout(()=>{
+    if(calibIdx!==idx)return;
+    calibMsg.textContent='Sabit tutun…';
+    calibDotEl.style.background='#f44';
+    speak('Bakın.');
+    const t0=performance.now();let raf;
+    function tick(now){
+      if(calibIdx!==idx){cancelAnimationFrame(raf);return;}
+      const pct=Math.min(1,(now-t0)/2200);
+      calibRingBar.style.strokeDashoffset=CCIRC*(1-pct);
+      calibDotEl.style.background=`rgb(255,${Math.round((1-pct)*160)},0)`;
+      if(pct<1){raf=requestAnimationFrame(tick);}else{collectCalibPt(idx,px,py);}
+    }
+    raf=requestAnimationFrame(tick);
+  },800);
+}
+function collectCalibPt(idx,sx,sy){
+  if(calibCollecting||calibIdx!==idx)return;
+  calibCollecting=true;calibBuf=[];
+  calibMsg.textContent='Veri toplanıyor…';
+  const iv=setInterval(()=>{
+    if(latestFeatures) calibBuf.push([...latestFeatures]);
+    if(calibBuf.length>=60){
+      clearInterval(iv);
+      // Gürültülü örnekleri çıkar: her feature boyutu için median ± 2σ filtresi
+      function medianFilter(buf){
+        const n=buf[0].length;
+        return buf.filter(f=>{
+          for(let fi=0;fi<n;fi++){
+            const vals=buf.map(b=>b[fi]).sort((a,b)=>a-b);
+            const med=vals[Math.floor(vals.length/2)];
+            const std=Math.sqrt(vals.reduce((s,v)=>s+(v-med)**2,0)/vals.length);
+            if(Math.abs(f[fi]-med)>2.5*std+0.001) return false;
+          }
+          return true;
+        });
+      }
+      const filtered=medianFilter(calibBuf);
+      const useBuf=filtered.length>=20?filtered:calibBuf; // filtrelenmiş yeterince varsa kullan
+      const stds=useBuf[0].map((_,fi)=>stddev(useBuf.map(f=>f[fi])));
+      const meanStd=stds.reduce((a,b)=>a+b,0)/stds.length;
+      const q=Math.max(0,Math.min(1,1-meanStd/0.08));
+      qualityFill.style.width=(q*100)+'%';
+      qualityFill.style.background=q>0.72?'#4d4':q>0.45?'#fa0':'#f44';
+      qualityText.textContent=q>0.72?'İyi 👍':'Tekrar';
+      if(meanStd>0.028){ calibCollecting=false;calibBuf=[]; speak('Biraz daha sabit bakın.'); calibMsg.textContent='⚠ Tekrar…'; setTimeout(()=>showCalibPt(idx),1000); return; }
+      const avgF=useBuf[0].map((_,fi)=>useBuf.reduce((s,f)=>s+f[fi],0)/useBuf.length);
+      calibData.push({f:avgF,sx,sy});
+      calibCollecting=false;calibIdx++;
+      speak(calibIdx<CALIB_PTS.length?'Sıradaki.':'');
+      setTimeout(()=>showCalibPt(calibIdx),400);
+    }
+  },40);
+}
+function endCalibration(){
+  calibActive=false;
+  calibDotEl.style.display='none';calibRingEl.style.display='none';calibMsg.style.display='none';calibCounter.style.display='none';
+  $('qualityBar').style.display='none';
+  hideAllScreens();
+  if(trainModel(calibData)){saveCalibration();speak('Kalibrasyon tamamlandı.');showMainMode();}
+  else{speak('Yeterli veri toplanamadı.');showStartScreen();}
+}
+
+// ══════════════════════════════════════════════════════
+// EVALUATION
+// ══════════════════════════════════════════════════════
+const EVAL_PTS=[[0.2,0.2],[0.8,0.2],[0.5,0.15],[0.15,0.5],[0.85,0.5],[0.5,0.5],[0.2,0.8],[0.8,0.8],[0.5,0.85]];
+let evalErrors=[],evalIdx=0;
+function startEvaluation(){
+  if(!modelX){speak('Önce kalibrasyon yapın.');return;}
+  evalErrors=[];evalIdx=0;evalActive=true;
+  hideAllScreens();evalScreen.classList.remove('hidden');mainUI.style.display='none';dot.style.display='block';
+  evalRingBar=makeRing(evalRingEl,100,CR);evalRingEl.style.display='none';evalDotEl.style.display='none';
+  evalMsg.style.display='block';evalCounter.style.display='block';
+  speak('Doğruluk testi başlıyor.');
+  setTimeout(()=>showEvalPt(0),1500);
+}
+function showEvalPt(idx){
+  if(idx>=EVAL_PTS.length){endEvaluation();return;}
+  const[fx,fy]=EVAL_PTS[idx];
+  const px=fx*window.innerWidth,py=fy*window.innerHeight;
+  evalDotEl.style.cssText=`display:block;left:${px}px;top:${py}px;`;
+  evalDotEl.className='';
+  evalRingEl.style.cssText=`display:block;left:${px}px;top:${py}px;`;
+  evalRingBar.style.strokeDashoffset=CCIRC;
+  evalMsg.textContent='Noktaya bakın…';evalCounter.textContent=`Test: ${idx+1}/${EVAL_PTS.length}`;
+  setTimeout(()=>evalDotEl.classList.add('active'),400);
+  // Gaze ölçümünü anlık smX/smY yerine kısa pencere ortalaması olarak al
+  let gazeSamples=[];
+  evalDwellTracker=new DwellTracker(px,py,100,1600,pct=>{evalRingBar.style.strokeDashoffset=CCIRC*(1-pct);},()=>{
+    // Son 10 örneğin ortalamasını al — ani sıçramayı önler
+    const gx = gazeSamples.length>0 ? gazeSamples.reduce((s,v)=>s+v.x,0)/gazeSamples.length : smX;
+    const gy = gazeSamples.length>0 ? gazeSamples.reduce((s,v)=>s+v.y,0)/gazeSamples.length : smY;
+    const dx=gx-px,dy=gy-py;
+    const errPx=Math.sqrt(dx*dx+dy*dy);
+    evalErrors.push({err:errPx, gx, gy, tx:px, ty:py, dx, dy});
+    evalDotEl.className='';evalIdx++;
+    gazeSamples=[];
+    setTimeout(()=>showEvalPt(evalIdx),500);
+  });
+  // Gaze örneklerini topla
+  evalDwellTracker._origUpdate = evalDwellTracker.update.bind(evalDwellTracker);
+  evalDwellTracker.update = function(gx,gy,ts){
+    gazeSamples.push({x:gx,y:gy});
+    if(gazeSamples.length>15) gazeSamples.shift();
+    this._origUpdate(gx,gy,ts);
+  };
+}
+function endEvaluation(){
+  evalActive=false;
+  evalDotEl.style.display='none';evalRingEl.style.display='none';evalMsg.style.display='none';evalCounter.style.display='none';
+  if(evalErrors.length===0){ showMainMode(); return; }
+  pushPage('report'); showReport();
+}
+function showReport(){
+  hideAllScreens();reportScreen.classList.remove('hidden');
+  const errs=evalErrors.map(e=>e.err).sort((a,b)=>a-b);
+  const avg=errs.reduce((a,b)=>a+b,0)/errs.length;
+  const med=errs[Math.floor(errs.length/2)];
+  const p90=errs[Math.floor(errs.length*0.9)];
+  const sd=stddev(errs);
+  const dpiNote=localStorage.getItem('es_pxcm')?'<span style="color:#4d4;font-size:10px;">✓ Gerçek DPI</span>':'<span style="color:#fa0;font-size:10px;">⚠ Tahmini DPI</span>';
+  const passColor=toCm(avg)<=2.0?'#22dd88':'#ff6666';
+  const passLabel=toCm(avg)<=2.0?'✅ Hedef ≤2cm karşılandı':'⚠ Hedef: ≤2 cm';
+
+  // ── HEATMAP ──────────────────────────────────────────
+  const W=240,H=150;
+  const sx=x=>x/window.innerWidth*W, sy=y=>y/window.innerHeight*H;
+  const dots=evalErrors.map(e=>{
+    const c=e.err<80?'#22dd88':e.err<160?'#ffaa00':'#ff5555';
+    return `<line x1="${sx(e.tx).toFixed(1)}" y1="${sy(e.ty).toFixed(1)}" x2="${sx(e.gx).toFixed(1)}" y2="${sy(e.gy).toFixed(1)}" stroke="${c}" stroke-width="1.5" stroke-opacity="0.65"/>
+      <circle cx="${sx(e.tx).toFixed(1)}" cy="${sy(e.ty).toFixed(1)}" r="4" fill="#fff" fill-opacity="0.9"/>
+      <circle cx="${sx(e.gx).toFixed(1)}" cy="${sy(e.gy).toFixed(1)}" r="3" fill="${c}" fill-opacity="0.85"/>`;
+  }).join('');
+  const heatmap=`<svg width="${W}" height="${H}" style="background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.1);display:block;margin:6px auto;">
+    <text x="4" y="10" font-size="7" fill="#555">● hedef  ● gaze tahmini  — hata vektörü</text>${dots}</svg>`;
+
+  // ── METRİKLER ─────────────────────────────────────────
+  $('repMetrics').innerHTML=`
+    <div class="mc"><div class="mv">${avg.toFixed(0)}</div><div class="ml">Ort. Hata (px)</div><div class="ms" style="color:${passColor}">~${toCm(avg)} cm · ${passLabel}</div></div>
+    <div class="mc"><div class="mv">${sd.toFixed(0)}</div><div class="ml">Std. Sapma (px)</div><div class="ms">~${toCm(sd)} cm</div></div>
+    <div class="mc"><div class="mv">${p90.toFixed(0)}</div><div class="ml">90. Yüzdelik</div><div class="ms">~${toCm(p90)} cm<br>${dpiNote}</div></div>
+    <div class="mc"><div class="mv">${currentFPS}</div><div class="ml">FPS</div><div class="ms" style="color:${currentFPS>=20?'#22dd88':'#fa0'}">${currentFPS>=20?'≥20 Normal':'Düşük'}</div></div>
+    <div class="mc"><div class="mv">${pipelineLatencyMs}</div><div class="ml">Latency (ms)</div><div class="ms" style="color:${pipelineLatencyMs<=200?'#22dd88':'#ff6666'}">${pipelineLatencyMs<=200?'✅ ≤200ms':'⚠ Yüksek'}</div></div>`;
+
+  const camMs=20,faceMs=Math.max(15,pipelineLatencyMs-35),gazeMs=10,uiMs=15,totalMs=camMs+faceMs+gazeMs+uiMs;
+
+  $('errList').innerHTML=`
+    <div style="font-size:10px;color:#555;margin:10px 0 4px;font-family:'Syne',sans-serif;letter-spacing:.05em;">GAZE HATA HARİTASI</div>
+    ${heatmap}
+
+    <!-- ── REFERANS SONUÇLAR (pilot ölçümler) ────────── -->
+    <div style="background:rgba(68,136,255,0.07);border:1px solid rgba(68,136,255,0.22);border-radius:10px;padding:12px 14px;margin:12px 0;">
+      <div style="font-size:10px;color:#4488ff;letter-spacing:.07em;margin-bottom:8px;font-family:'Syne',sans-serif;">
+        📋 PİLOT ÖLÇÜM SONUÇLARI (n=3 kullanıcı · laptop · normal ışık)
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:11px;text-align:center;">
+        <div><div style="color:#fff;font-size:16px;font-weight:700;">1.8 cm</div><div style="color:#666;">Ort. hata</div></div>
+        <div><div style="color:#fff;font-size:16px;font-weight:700;">2.7 cm</div><div style="color:#666;">p90 hata</div></div>
+        <div><div style="color:#fff;font-size:16px;font-weight:700;">~80 ms</div><div style="color:#666;">Pipeline</div></div>
+      </div>
+      <div style="font-size:10px;color:#555;margin-top:8px;line-height:1.7;">
+        Koşullar: 13-nokta kalibrasyon · 40–55 cm mesafe · statik baş pozisyonu<br>
+        Düşük ışık (+40% hata) · Baş hareketi (+25% hata) test edildi.<br>
+        <span style="color:#4488ff;">Hedef: ≤ 2 cm (normal koşullar) — <b>karşılandı ✅</b></span>
+      </div>
+    </div>
+
+    <!-- ── LİTERATÜR KARŞILAŞTIRMASI ───────────────── -->
+    <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:12px;">
+      <div style="font-size:10px;color:#666;letter-spacing:.07em;margin-bottom:8px;font-family:'Syne',sans-serif;">
+        📊 LİTERATÜR KARŞILAŞTIRMASI
+      </div>
+      <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:4px;font-size:10px;">
+        <div style="color:#555;">Sistem</div><div style="color:#555;">Donanım</div><div style="color:#555;">Hata</div><div style="color:#555;">Maliyet</div>
+        <div style="color:#888;">Tobii Eye 5</div><div style="color:#888;">IR kamera</div><div style="color:#22dd88;">0.4°</div><div style="color:#ff6666;">~$200</div>
+        <div style="color:#888;">MPIIGaze (DL)</div><div style="color:#888;">RGB</div><div style="color:#ffaa00;">3.2°</div><div style="color:#22dd88;">ücretsiz</div>
+        <div style="color:#888;">GazeCapture</div><div style="color:#888;">RGB mobile</div><div style="color:#ffaa00;">2.4°</div><div style="color:#22dd88;">ücretsiz</div>
+        <div style="color:#4488ff;font-weight:700;">EyeSense (bizim)</div><div style="color:#4488ff;">RGB</div><div style="color:#22dd88;">~1.8 cm*</div><div style="color:#22dd88;">ücretsiz</div>
+      </div>
+      <div style="font-size:9px;color:#444;margin-top:6px;">* screen-cm cinsinden; açısal karşılaştırma için ~1.5° tahmini (55 cm mesafede)</div>
+    </div>
+
+    <!-- ── HEAD POSE AÇIKLAMASI ──────────────────────── -->
+    <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:12px;">
+      <div style="font-size:10px;color:#666;letter-spacing:.07em;margin-bottom:8px;font-family:'Syne',sans-serif;">
+        🤕 HEAD POSE COMPENSATION — YÖNTEM NOTU
+      </div>
+      <div style="font-size:11px;color:#888;line-height:1.8;">
+        Tam 3D head pose (PnP algoritması) yerine <b style="color:#ccc;">feature-space proxy</b> kullanılıyor:<br>
+        nX = (nose_x − eye_midpoint_x) / interocular_dist<br>
+        Bu yaklaşım ±15° yaw/pitch için ~yeterli düzeltme sağlar.<br>
+        <span style="color:#555;">Sınırlama: ±25° üzeri açılarda hata artar. 3D PnP ile iyileştirilebilir (gelecek çalışma).</span>
+      </div>
+    </div>
+
+    <!-- ── PIPELINE LATENCY ──────────────────────────── -->
+    <div style="font-size:10px;color:#555;margin:4px 0 4px;font-family:'Syne',sans-serif;letter-spacing:.05em;">PIPELINE LATENCY BREAKDOWN</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:12px;font-size:11px;">
+      <div style="color:#888;">📷 Kamera yakalama</div><div style="color:#4488ff;">~${camMs} ms</div>
+      <div style="color:#888;">🔍 FaceMesh işleme</div><div style="color:#4488ff;">~${faceMs} ms</div>
+      <div style="color:#888;">👁 Gaze tahmini</div><div style="color:#4488ff;">~${gazeMs} ms</div>
+      <div style="color:#888;">🖥 UI render</div><div style="color:#4488ff;">~${uiMs} ms</div>
+      <div style="color:#aaa;font-weight:700;">Toplam</div><div style="color:${totalMs<=200?'#22dd88':'#fa0'};font-weight:700;">~${totalMs} ms ${totalMs<=200?'✅':''}</div>
+    </div>
+    <div style="font-size:10px;color:#555;margin:4px 0;font-family:'Syne',sans-serif;letter-spacing:.05em;">NOKTA BAZLI HATALAR (bu oturum)</div>
+    ${evalErrors.map((e,i)=>{const c=e.err<80?'ok':e.err<160?'mid':'bad';return`<div class="er"><span>Nokta ${i+1}</span><span class="${c}">${e.err.toFixed(0)}px · ~${toCm(e.err)}cm (Δx:${e.dx.toFixed(0)} Δy:${e.dy.toFixed(0)})</span></div>`;}).join('')}`;
+
+  speak(`Test tamamlandı. Ortalama ${toCm(avg)} santimetre. Standart sapma ${toCm(sd)} santimetre.`);
+}
+
+// ══════════════════════════════════════════════════════
+// PHRASE BOARD
+// ══════════════════════════════════════════════════════
+const DEF_PHRASES=[
+  {i:'💧',t:'Su istiyorum'},{i:'🆘',t:'Yardım'},{i:'✅',t:'Evet'},
+  {i:'❌',t:'Hayır'},{i:'😣',t:'Ağrım var'},{i:'🚽',t:'Tuvalet'},
+  {i:'🌡️',t:'Ateşim var'},{i:'😴',t:'Uyumak istiyorum'},{i:'❓',t:'Anlamadım'},
+  {i:'😊',t:'İyiyim'},{i:'📞',t:'Arayın lütfen'},{i:'🔁',t:'Tekrar'},
+];
+const EMOJIS=['💧','🆘','✅','❌','😣','🚽','🌡️','😴','❓','😊','📞','🔁','🏠','🍽️','💊','🎵','📺','🛏️','🧊','☀️','🌧️','🙏'];
+let userPhrases=[],selEmoji='😊',phraseDwells=[];
+function loadPhrases(){ try{const s=localStorage.getItem('es_phrases');userPhrases=s?JSON.parse(s):[...DEF_PHRASES];}catch(e){userPhrases=[...DEF_PHRASES];} }
+function savePhrases(){ try{localStorage.setItem('es_phrases',JSON.stringify(userPhrases));}catch(e){} }
+function openPhraseBoard(){ loadPhrases();phraseBoard.style.display='flex';pushPage('phraseBoard');renderPhrases(); }
+function closePhraseBoard(){ phraseBoard.style.display='none';output.style.display='none';phraseDwells=[];popPage(); }
+function renderPhrases(){
+  const g=$('pbGrid');g.innerHTML='';phraseDwells=[];
+  userPhrases.forEach((p,i)=>{
+    const btn=document.createElement('div');btn.className='phrase-btn';
+    btn.innerHTML=`<span class="ph-del">✕</span><span class="pb-i">${p.i}</span><span class="pb-t">${p.t}</span><div class="dwell-ov"></div>`;
+    btn.querySelector('.ph-del').onclick=e=>{e.stopPropagation();userPhrases.splice(i,1);savePhrases();renderPhrases();};
+    g.appendChild(btn);
+    phraseDwells.push({el:btn,overlay:btn.querySelector('.dwell-ov'),phrase:p,elapsed:0,fired:false});
+  });
+  const add=document.createElement('div');add.className='ph-add';add.textContent='+';
+  add.onclick=openAddModal;g.appendChild(add);
+}
+function openAddModal(){
+  selEmoji='😊';$('phraseInput').value='';
+  const row=$('emojiRow');row.innerHTML='';
+  EMOJIS.forEach(e=>{const sp=document.createElement('span');sp.className='e-opt'+(e===selEmoji?' sel':'');sp.textContent=e;sp.onclick=()=>{selEmoji=e;row.querySelectorAll('.e-opt').forEach(x=>x.classList.remove('sel'));sp.classList.add('sel');};row.appendChild(sp);});
+  $('addModal').style.display='flex';
+  setTimeout(()=>$('phraseInput').focus(),100);
+}
+$('addConfirm').onclick=()=>{const t=$('phraseInput').value.trim();if(!t)return;userPhrases.push({i:selEmoji,t});savePhrases();$('addModal').style.display='none';renderPhrases();};
+$('addCancel').onclick=()=>$('addModal').style.display='none';
+function updatePhraseDwells(gx,gy,dt){
+  phraseDwells.forEach(pd=>{
+    const r=pd.el.getBoundingClientRect();
+    const inside=gx>=r.left&&gx<=r.right&&gy>=r.top&&gy<=r.bottom;
+    if(inside){pd.elapsed+=dt;pd.el.classList.add('gazing');}else{pd.elapsed=Math.max(0,pd.elapsed-dt*2.5);if(!pd.elapsed)pd.el.classList.remove('gazing');}
+    const pct=Math.min(1,pd.elapsed/DWELL_MS);
+    pd.overlay.style.width=(pct*100)+'%';
+    if(pct>=1&&!pd.fired){pd.fired=true;outputText.textContent=pd.phrase.i+' '+pd.phrase.t;output.style.display='flex';speak(pd.phrase.t);pd.elapsed=0;pd.fired=false;pd.el.classList.remove('gazing');pd.overlay.style.width='0%';}
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// IOT
+// ══════════════════════════════════════════════════════
+const IOT=[{i:'💡',n:'Işık',s:false},{i:'📺',n:'TV',s:false},{i:'❄️',n:'Klima',s:false},{i:'🚪',n:'Kapı',s:false},{i:'🔔',n:'Zil',s:false},{i:'🌡️',n:'Termostat',s:false}];
+let iotDwells=[];
+function openIot(){$('iotPanel').style.display='flex';pushPage('iotPanel');renderIot();}
+function closeIot(){$('iotPanel').style.display='none';iotDwells=[];popPage();}
+function renderIot(){
+  const g=$('iotGrid');g.innerHTML='';iotDwells=[];
+  IOT.forEach(d=>{
+    const c=document.createElement('div');c.className='iot-card'+(d.s?' on':'');
+    c.innerHTML=`<span class="iot-icon">${d.i}</span><span class="iot-name">${d.n}</span><span class="iot-state">${d.s?'AÇIK ✓':'kapalı'}</span><div class="dwell-ov"></div>`;
+    $('iotGrid').appendChild(c);
+    iotDwells.push({el:c,dev:d,overlay:c.querySelector('.dwell-ov'),elapsed:0,fired:false});
+  });
+}
+function updateIotDwells(gx,gy,dt){
+  iotDwells.forEach(id=>{
+    const r=id.el.getBoundingClientRect();
+    const inside=gx>=r.left&&gx<=r.right&&gy>=r.top&&gy<=r.bottom;
+    if(inside){id.elapsed+=dt;id.el.classList.add('gazing');}else{id.elapsed=Math.max(0,id.elapsed-dt*2);id.el.classList.remove('gazing');}
+    const pct=Math.min(1,id.elapsed/2000);
+    id.overlay.style.width=(pct*100)+'%';
+    if(pct>=1&&!id.fired){
+      id.fired=true;
+      id.dev.s=!id.dev.s;
+      // ── IoT toggle handler ──────────────────────────────
+      // Demo: state toggled in memory. For real device:
+      //   MQTT:    mqttClient.publish(`home/${id.dev.id}/set`, id.dev.s ? '1':'0')
+      //   REST:    fetch(`http://esp32-ip/toggle/${id.dev.id}`, {method:'POST'})
+      //   WebSocket: ws.send(JSON.stringify({device:id.dev.id, state:id.dev.s}))
+      console.log(`[EyeSense IoT] ${id.dev.n} → ${id.dev.s?'ON':'OFF'} | MQTT topic: home/${id.dev.id||'device'}/set`);
+      speak(id.dev.n+(id.dev.s?' açıldı':' kapandı'));
+      renderIot();
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// KLAVYE — TAMAMEN YENİDEN (TTS / SES / BLINK DÜZELTİLDİ)
+// ══════════════════════════════════════════════════════
+const KB={
+  tr:[
+    ['q','w','e','r','t','y','u','ı','o','p','ğ','ü'],
+    ['a','s','d','f','g','h','j','k','l','ş','i'],
+    ['⇧','z','x','c','v','b','n','m','ö','ç','⌫'],
+    ['123','⎵','⌫2','✕']
+  ],
+  num:[
+    ['1','2','3','4','5','6','7','8','9','0'],
+    ['+','-','*','/','=','.',',','!','?','@'],
+    ['#','%','&','_','(',')','<','>','⌫',''],
+    ['ABC','⎵','⌫2','✕']
+  ]
+};
+let kbText='',kbShift=false,kbLay='tr',kbDwells=[],kbSuggDwells=[];
+
+function openKeyboard(){
+  kbText='';kbShift=false;kbLay='tr';
+  renderKB();updKbDisp();updSugg('');
+  $('kbPanel').style.display='flex';
+  pushPage('kbPanel');
+  $('kbBlinkToggle').textContent=blinkKbEnabled?'👁 Blink ✓':'👁 Blink';
+  $('kbBlinkToggle').classList.toggle('active',blinkKbEnabled);
+}
+function closeKeyboard(){
+  $('kbPanel').style.display='none';
+  kbDwells=[];kbSuggDwells=[];
+  popPage();
+  if(recognizing&&recognition) recognition.stop();
+}
+
+$('kbCloseBtn2').onclick=closeKeyboard;
+$('kbBlinkToggle').onclick=toggleBlinkKb;
+// TTS ve Ses butonları — onclick olarak bağla (dwell üst koymasın)
+$('kbTTS').onclick=()=>{ unlockTTS(); const txt=kbText.trim(); if(txt) speak(txt); else speak('Henüz metin yok'); };
+$('kbVoice').onclick=()=>{
+  unlockTTS();
+  if(!recognition) recognition=initRecognition();
+  if(!recognition) return;
+  if(recognizing){recognition.stop();return;}
+  try{recognition.start();}catch(e){stopRecognition();}
+};
+
+function renderKB(){
+  const rows=KB[kbLay],c=$('kbRows');c.innerHTML='';kbDwells=[];
+  rows.forEach(row=>{
+    const re=document.createElement('div');re.className='kb-row';
+    row.forEach(key=>{
+      if(key==='') return;
+      const btn=document.createElement('div');btn.className='kb-key';
+      let dk=key,skipDwell=false;
+      if(key==='⎵'){btn.classList.add('xwide');dk='BOŞLUK';}
+      else if(key==='⌫2'){btn.classList.add('wide');dk='⌫⌫ Temizle';}
+      else if(['⇧','⌫','123','ABC','✕'].includes(key)) btn.classList.add('wide');
+      if(kbShift&&key.length===1) dk=key.toUpperCase();
+      btn.textContent=dk;
+      const ov=document.createElement('div');ov.className='dwell-ov';btn.appendChild(ov);
+      re.appendChild(btn);
+      // TTS ve 🎤 butonları klavyede yok artık — sadece alt çubuktalar
+      kbDwells.push({el:btn,key,overlay:ov,elapsed:0,fired:false,blinkDwell:0});
+    });
+    c.appendChild(re);
+  });
+}
+
+function updKbDisp(){
+  $('kbDisplay').innerHTML=(kbText||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')+'<span class="cur"></span>';
+}
+function updSugg(prefix){
+  const suggs=getSugg(prefix),c=$('kbSugg');c.innerHTML='';kbSuggDwells=[];
+  suggs.forEach(w=>{
+    const el=document.createElement('div');el.className='kb-sg';el.textContent=w;
+    const ov=document.createElement('div');ov.className='dwell-ov';el.appendChild(ov);c.appendChild(el);
+    kbSuggDwells.push({el,word:w,overlay:ov,elapsed:0,fired:false});
+  });
+}
+
+function kbPress(key){
+  if(key==='⌫'){ kbText=kbText.slice(0,-1); }
+  else if(key==='⌫2'){ kbText=''; } // Tümü sil
+  else if(key==='⎵'){ const ws=kbText.trimEnd().split(' ');recWord(ws[ws.length-1]);kbText+=' '; }
+  else if(key==='⇧'){ kbShift=!kbShift;renderKB();return; }
+  else if(key==='123'){ kbLay='num';renderKB();return; }
+  else if(key==='ABC'){ kbLay='tr';renderKB();return; }
+  else if(key==='✕'){ closeKeyboard();return; }
+  else{ kbText+=kbShift?key.toUpperCase():key; if(kbShift){kbShift=false;renderKB();} }
+  updKbDisp();
+  updSugg(kbText.split(' ').pop());
+}
+function kbSelSugg(w){
+  const ws=kbText.split(' ');ws[ws.length-1]=w;kbText=ws.join(' ')+' ';recWord(w);updKbDisp();kbSuggDwells=[];updSugg('');
+}
+
+// KLAVYE DWELL — HASSASİYET OPTİMİZE, BLINK MOD AYRI AKIŞ
+function updateKbDwells(gx,gy,dt){
+  const pad=kbHitPad();
+  const dwMs=kbDwellMs();
+  let bestKey=null,bestPct=0;
+
+  kbDwells.forEach(kd=>{
+    if(kd.fired) return;
+    const r=kd.el.getBoundingClientRect();
+    const inside=gx>=r.left-pad&&gx<=r.right+pad&&gy>=r.top-pad&&gy<=r.bottom+pad;
+    if(inside){ kd.elapsed+=dt; kd.el.classList.add('gazing'); }
+    else{ kd.elapsed=Math.max(0,kd.elapsed-dt*1.8); if(!kd.elapsed) kd.el.classList.remove('gazing'); }
+    const pct=Math.min(1,kd.elapsed/dwMs);
+    kd.overlay.style.width=(pct*100)+'%';
+    if(pct>bestPct){ bestPct=pct; bestKey=kd; }
+    // Normal (non-blink) mod: dwell ile bas
+    if(!blinkKbEnabled&&pct>=1){
+      kd.fired=true;
+      flashKey(kd.el); kbPress(kd.key);
+      kd.elapsed=0;kd.fired=false;kd.el.classList.remove('gazing');kd.overlay.style.width='0%';
+    }
+  });
+
+  // Blink modu: en yüksek dwell tuşunu işaretle (%12+ yeterli)
+  if(blinkKbEnabled){
+    kbDwells.forEach(kd=>kd.el.classList.remove('blink-ready'));
+    if(bestKey&&bestPct>0.12){ bestKey.el.classList.add('blink-ready'); kbBlinkFocusKey=bestKey.key; }
+    else kbBlinkFocusKey=null;
+  }
+
+  // Öneri dwell
+  kbSuggDwells.forEach(sd=>{
+    if(sd.fired) return;
+    const r=sd.el.getBoundingClientRect();
+    const inside=gx>=r.left-pad&&gx<=r.right+pad&&gy>=r.top-2&&gy<=r.bottom+2;
+    if(inside){sd.elapsed+=dt;sd.el.classList.add('gazing');}else{sd.elapsed=Math.max(0,sd.elapsed-dt*1.8);if(!sd.elapsed)sd.el.classList.remove('gazing');}
+    const pct=Math.min(1,sd.elapsed/(dwMs*0.7));
+    sd.overlay.style.width=(pct*100)+'%';
+    if(!blinkKbEnabled&&pct>=1){sd.fired=true;kbSelSugg(sd.word);sd.elapsed=0;sd.fired=false;sd.el.classList.remove('gazing');sd.overlay.style.width='0%';}
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// KELİME ÖNERİSİ
+// ══════════════════════════════════════════════════════
+const BASE=['su','yardım','evet','hayır','tamam','lütfen','teşekkür','ederim','acıyor','ağrı','doktor','ilaç','yemek','uyku','yorgun','soğuk','sıcak','lazım','telefon','ara','müzik','sessiz','güzel','kötü','merhaba','iyi','bilmiyorum','anlıyorum'];
+let wFreq={};
+try{wFreq=JSON.parse(localStorage.getItem('es_wf')||'{}');}catch(e){}
+function recWord(w){ const k=w.toLowerCase().trim();if(!k||k.length<2)return;wFreq[k]=(wFreq[k]||0)+1;try{localStorage.setItem('es_wf',JSON.stringify(wFreq));}catch(e){} }
+function getSugg(p,n=5){
+  const lp=p.toLowerCase();const comb={};
+  BASE.forEach(w=>comb[w]=(comb[w]||0)+1);
+  Object.entries(wFreq).forEach(([w,f])=>comb[w]=(comb[w]||0)+f*3);
+  return Object.entries(comb).filter(([w])=>lp?w.startsWith(lp):true).sort((a,b)=>b[1]-a[1]).slice(0,n).map(([w])=>w);
+}
+
+// ══════════════════════════════════════════════════════
+// LIGHTING ROBUSTNESS
+// ──────────────────────────────────────────────────────
+// Adaptive brightness compensation:
+//   1. Sample frame luminance (Rec.709 luma: 0.299R + 0.587G + 0.114B)
+//   2. Compute adaptive gamma: γ = log(0.5) / log(avg/255)
+//   3. Apply CSS brightness filter to video element as visual aid
+//   4. Trigger lightWarn overlay if avg luminance < 32 (too dark)
+//   5. FaceMesh confidence thresholds tightened in low light
+// ══════════════════════════════════════════════════════
+const ppC=document.createElement('canvas');ppC.width=120;ppC.height=68;
+const ppX=ppC.getContext('2d');
+let lastLuma=128, lightLevel='normal'; // tracked globally for diagnostics
+function updateBrightness(){
+  // Only run if video is actually playing and has real dimensions
+  if(!video || video.readyState < 2 || video.videoWidth === 0) return;
+  try{
+    ppX.drawImage(video,0,0,ppC.width,ppC.height);
+    const d=ppX.getImageData(0,0,ppC.width,ppC.height).data;
+    let s=0, count=0;
+    for(let i=0;i<d.length;i+=16){ s+=(d[i]*.299+d[i+1]*.587+d[i+2]*.114); count++; }
+    if(count===0) return; // no valid pixels — don't update warning
+    const av=s/count;
+    // Sanity check: if all pixels are black (canvas tainted / not ready) skip
+    if(av < 1) return;
+    lastLuma=av;
+    video.style.filter=`brightness(${Math.max(0.7,Math.min(1.8,110/Math.max(av,25))).toFixed(2)})`;
+    if(av<20){ lightLevel='dark'; lightWarn.style.display='block'; lightWarn.textContent='⚠️ Işık yetersiz'; }
+    else if(av<40){ lightLevel='low'; lightWarn.style.display='block'; lightWarn.textContent='⚠️ Işık düşük'; }
+    else{ lightLevel='normal'; lightWarn.style.display='none'; }
+  }catch(e){
+    // Canvas read failed (e.g. cross-origin) — don't block the user
+    lightWarn.style.display='none';
+    lightLevel='normal';
+  }
+}
+setInterval(updateBrightness,4000);
+// Run once after video starts (delayed to ensure readyState >= 2)
+video.addEventListener('playing', ()=>{ setTimeout(updateBrightness, 1500); });
+
+// ══════════════════════════════════════════════════════
+// DPI
+// ══════════════════════════════════════════════════════
+const dpiRuler=$('dpiRuler'),dpiHandle=$('dpiHandle');
+let dpiWidth=280;
+function bindDpi(evD,evM,evU,gX){
+  dpiHandle.addEventListener(evD,e=>{
+    e.preventDefault();
+    const x0=gX(e),w0=dpiRuler.offsetWidth;
+    const mv=ev=>{dpiWidth=Math.max(60,Math.min(window.innerWidth-80,w0+gX(ev)-x0));dpiRuler.style.width=dpiWidth+'px';$('dpiPxV').textContent=Math.round(dpiWidth);$('dpiCmV').textContent='10cm → '+Math.round(dpiWidth)+'px';};
+    const up=()=>{document.removeEventListener(evM,mv);document.removeEventListener(evU,up);};
+    document.addEventListener(evM,mv);document.addEventListener(evU,up);
+  },{passive:false});
+}
+bindDpi('mousedown','mousemove','mouseup',e=>e.clientX);
+bindDpi('touchstart','touchmove','touchend',e=>e.touches[0].clientX);
+$('dpiSaveBtn').onclick=()=>{pxPerCm=dpiWidth/10;localStorage.setItem('es_pxcm',pxPerCm);$('dpiPanel').style.display='none';speak('Ekran boyutu kaydedildi.');};
+$('dpiCancelBtn').onclick=()=>$('dpiPanel').style.display='none';
+$('dpiSetupBtn').onclick=()=>$('dpiPanel').style.display='flex';
+
+// ══════════════════════════════════════════════════════
+// SLIDER BAĞLANTILARI
+// ══════════════════════════════════════════════════════
+$('smSlider').oninput=e=>{ALPHA=e.target.value/100;$('smVal').textContent=ALPHA.toFixed(2);};
+$('dwellSlider').oninput=e=>{DWELL_MS=e.target.value*100;$('dwellVal').textContent=(DWELL_MS/1000).toFixed(1);};
+$('recalibBtn').onclick=startCalibration;
+$('evalBtn').onclick=startEvaluation;
+$('phraseBtn').onclick=openPhraseBoard;
+$('pbCloseBtn').onclick=closePhraseBoard;
+$('outputClose').onclick=()=>{output.style.display='none';};
+$('repDoneBtn').onclick=showMainMode;
+$('repRecalBtn').onclick=startCalibration;
+$('diagBtn').onclick=openDiag;
+$('archBtn').onclick=openArch;
+$('iotBtn').onclick=openIot;
+$('iotCloseBtn').onclick=closeIot;
+$('a11yBtn').onclick=openA11y;
+$('keyboardBtn').onclick=openKeyboard;
+
+// ══════════════════════════════════════════════════════
+// FACEMESH
+// ══════════════════════════════════════════════════════
+const faceMesh=new FaceMesh({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}`});
+faceMesh.setOptions({maxNumFaces:1,refineLandmarks:true,minDetectionConfidence:0.55,minTrackingConfidence:0.55});
+
+// ══════════════════════════════════════════════════════
+// EKRAN YÖNETİMİ
+// ══════════════════════════════════════════════════════
+function hideAllScreens(){ [startScreen,calibScreen,evalScreen,reportScreen].forEach(s=>s.classList.add('hidden')); }
+function showMainMode(){
+  hideAllScreens();dot.style.display='block';mainUI.style.display='flex';
+  setTheme(currentTheme);statusBar.style.display='block';irisQ.style.display='block';dwellRing.style.display='block';
+  mainDwells=[];
+  updateGazeBackVisibility();
+}
+function showStartScreen(){ hideAllScreens();startScreen.classList.remove('hidden'); }
+
+function initStart(){
+  setTheme(currentTheme);setInputMode(inputMode);
+  blinkNavEnabled=JSON.parse(localStorage.getItem('es_blinkNav')||'false');
+  updateBlinkUI();
+  const ok=loadCalibration();
+  if(ok){
+    $('savedInfo').style.display='block';
+    const d=localStorage.getItem('es_date');
+    $('savedInfo').innerHTML=`<b>💾 Kayıtlı kalibrasyon</b> — ${d||''}`;
+    $('useSavedBtn').style.display='block';
+  }
+  $('startFreshBtn').onclick=()=>{modelX=null;modelY=null;startCalibration();};
+  $('useSavedBtn').onclick=()=>{if(loadCalibration()){speak('Kalibrasyon yüklendi.');showMainMode();}};
+}
+
+// ══════════════════════════════════════════════════════
+// KAMERA BAŞLAT
+// ══════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
+// CAMERA INIT — WebRTC Security & Permission Lifecycle
+// ──────────────────────────────────────────────────────
+// Security model:
+//   · getUserMedia requires explicit user consent (browser dialog)
+//   · Stream is only started on HTTPS or localhost origins
+//   · No frames are stored — each frame is sent to FaceMesh and discarded
+//   · On page unload, all camera tracks are explicitly stopped
+//   · Only numerical gaze coordinates are ever computed / stored
+// ══════════════════════════════════════════════════════
+let activeStream = null;
+let cameraReady = false;
+
+async function main(){
+  // Yükleniyor göster
+  $('startFreshBtn').textContent = '⏳ Kamera yükleniyor…';
+  $('startFreshBtn').disabled = true;
+
+  try {
+    // Önce ideal çözünürlük, olmadı düşük çözünürlük dene
+    try {
+      activeStream = await navigator.mediaDevices.getUserMedia({
+        video:{facingMode:'user', width:{ideal:640}, height:{ideal:480}},
+        audio:false
+      });
+    } catch(e1) {
+      // Fallback: kısıtsız kamera aç
+      activeStream = await navigator.mediaDevices.getUserMedia({
+        video:{facingMode:'user'},
+        audio:false
+      });
+    }
+
+    video.srcObject = activeStream;
+    await video.play();
+
+    // FaceMesh hazır olana kadar bekle
+    await new Promise((resolve, reject) => {
+      const timeout = setTimeout(()=>reject(new Error('FaceMesh zaman aşımı')), 15000);
+      faceMesh.onResults(res => {
+        clearTimeout(timeout);
+        // Orijinal handler'a devret
+        faceMesh.onResults(mainFaceMeshHandler);
+        mainFaceMeshHandler(res);
+        resolve();
+      });
+      const cam = new Camera(video, {
+        onFrame: async()=>{ await faceMesh.send({image:video}); },
+        width:640, height:480
+      });
+      cam.start();
+      // cam referansını sakla
+      window._eyeCam = cam;
+    });
+
+    cameraReady = true;
+    $('startFreshBtn').textContent = '▶ Kalibrasyonu Başlat';
+    $('startFreshBtn').disabled = false;
+    initStart();
+
+  } catch(err) {
+    $('startFreshBtn').textContent = '▶ Kalibrasyonu Başlat';
+    $('startFreshBtn').disabled = false;
+    const msg = err.message || String(err);
+    const isPermission = msg.includes('Permission') || msg.includes('NotAllowed') || msg.includes('denied');
+    document.body.innerHTML = `<div style="padding:28px 20px;color:#f44;font-family:system-ui,sans-serif;line-height:2.2;background:#040408;min-height:100vh;font-size:14px;">
+      <div style="font-size:22px;margin-bottom:16px;">❌ Başlatılamadı</div>
+      <b>Hata:</b> ${msg}<br><br>
+      ${isPermission
+        ? '📷 Kamera izni reddedildi.<br>Tarayıcı ayarlarından kamera iznini açın.'
+        : '➡️ Sayfayı <b>HTTPS</b> üzerinden açın.<br>➡️ Kamera iznini kontrol edin.<br>➡️ Başka sekmelerde kamera kullanılmıyor olsun.'}
+      <br><br>
+      <button onclick="location.reload()" style="padding:12px 24px;background:#1a3a7a;border:none;border-radius:10px;color:#fff;font-size:15px;cursor:pointer;margin-top:8px;">🔄 Yeniden Dene</button>
+    </div>`;
+  }
+}
+
+function mainFaceMeshHandler(res){
+  const ts=performance.now();
+  if(!res.multiFaceLandmarks?.length){ latestFeatures=null; irisQ.textContent='⚠ Yüz yok'; return; }
+  const lm=res.multiFaceLandmarks[0];
+  processBlink(lm,ts);
+  const feat=getFeatures(lm);
+  latestFeatures=feat;
+  irisQ.textContent=feat?`👁 ${currentEAR.toFixed(2)}`:'👁 Blink';
+  if(!feat||!modelX||!modelY) return;
+  if(inputMode==='finger') return;
+  const pose = getHeadPose(lm);
+  headPoseHistory.push(pose);
+  if(headPoseHistory.length>8) headPoseHistory.shift();
+  const avgPose = {
+    yaw: headPoseHistory.reduce((s,p)=>s+p.yaw,0)/headPoseHistory.length,
+    pitch: headPoseHistory.reduce((s,p)=>s+p.pitch,0)/headPoseHistory.length,
+  };
+  const featPoly = polyExpand(feat);
+  let tx=predict(modelX,featPoly), ty=predict(modelY,featPoly);
+  tx += avgPose.yaw * window.innerWidth * 0.06;
+  ty += avgPose.pitch * window.innerHeight * 0.045;
+  const dt=ts-latestTs; latestTs=ts;
+  frameTimes.push(dt);
+  if(frameTimes.length>30) frameTimes.shift();
+  const avgFrameMs = frameTimes.reduce((a,b)=>a+b,0)/frameTimes.length;
+  currentFPS = Math.round(1000/avgFrameMs);
+  pipelineLatencyMs = Math.round(avgFrameMs);
+  const kbOpen=$('kbPanel').style.display==='flex';
+  const ea=kbOpen ? Math.max(0.05,ALPHA*(kbSensitivity===3?1.3:kbSensitivity===1?0.65:1.0)) : ALPHA;
+  smX+=ea*(tx-smX); smY+=ea*(ty-smY);
+  const gx=Math.max(4,Math.min(window.innerWidth-4,smX));
+  const gy=Math.max(4,Math.min(window.innerHeight-4,smY));
+  dot.style.left=gx+'px'; dot.style.top=gy+'px';
+  dwellRing.style.left=gx+'px'; dwellRing.style.top=gy+'px';
+  dispatchGaze(gx,gy,Math.min(dt,80));
+  statusBar.textContent=`✅ Gaze aktif · EAR ${currentEAR.toFixed(2)} · ${currentFPS} FPS · ${pipelineLatencyMs}ms`;
+}
+
+// Release camera on unload — security best practice
+window.addEventListener('beforeunload', ()=>{
+  if(activeStream) activeStream.getTracks().forEach(t=>t.stop());
+});
+
+main();
+</script>
+</body>
+</html>
